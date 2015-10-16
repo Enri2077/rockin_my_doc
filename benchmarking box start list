@@ -22,9 +22,9 @@ pre:
 	roslaunch rockin_scoring fbm1[h|w]_acquire_items.launch
 	
 test:
-	[t|f]bm[h|w]_env;
+	fbm[h|w]_env;
 	
-	log_monitor
+	? log_monitor
 	
 	roslaunch mocap_optitrack mocap.launch
 	rostopic echo /Robot_1/pose
