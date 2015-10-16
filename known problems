@@ -1,0 +1,4 @@
+when launching tbmw_log_mocap.launch, the process tbmw/map_server-3 dies; and the log file grows by just 47kB at a time in log_monitor, that is less than the other benchmarks and considered "growing not as expected" by log_monitor.
+Because of this, the map is not logged.
+
+

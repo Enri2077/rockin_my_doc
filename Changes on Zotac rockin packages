@@ -1,8 +1,10 @@
 changed the path of the logs bags in log_monitor
 
+removed "human" from tbmh_mocap.yaml
+
+changed the environments for the mocap logging (on GTL): GTL should never connect to the roscore on the refbox; but run roscore on localhost.
+envs: tbmh_env; tbmw_env; fbm_env; (fbm_manual_env)
 
 TODO:
-changed the environments for the mocap logging (on GTL): should never connect to the roscore on the refbox; but run roscore on localhost.
-new envs: tbmh_env; tbmw_env; fbm_env; (fbm_manual_env)
 
 x_log_mocap.launch refactoring based on the new logging configuration.

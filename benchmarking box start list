@@ -3,7 +3,7 @@ Add source ~/workspace/utils/setup.bash to .bashrc if not already added
 On GTL (HP):
 pre:
 test:
-	[t|f]bm[h|w]_env;
+	[t|f]bm[h|w]_env
 	
 	log_monitor
 	
@@ -13,7 +13,11 @@ test:
 	roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
 	
 run:
-	roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
+	update "User Data" in Motive to match [ fbm1 | tbmh | tbmw ]_mocap.yaml
+	
+	[t|f]bm[h|w]_env; roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
+	
+	[t|f]bm[h|w]_env; log_monitor
 	
 
 
