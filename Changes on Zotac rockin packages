@@ -1,5 +1,8 @@
+changed the path of the logs bags in log_monitor
 
-log_monitor:
-Changed the path of the logs bags.
 
-x_log_mocap.launch refactoring based on the new configuration.
+TODO:
+changed the environments for the mocap logging (on GTL): should never connect to the roscore on the refbox; but run roscore on localhost.
+new envs: tbmh_env; tbmw_env; fbm_env; (fbm_manual_env)
+
+x_log_mocap.launch refactoring based on the new logging configuration.
