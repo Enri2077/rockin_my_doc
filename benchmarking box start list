@@ -5,12 +5,11 @@ pre:
 test:
 	[t|f]bm[h|w]_env
 	
-	log_monitor
-	
-	roslaunch mocap_optitrack mocap.launch
-	rostopic echo /Robot_1/pose
-	
 	roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
+	
+	rostopic echo <whatever>
+	
+	log_monitor
 	
 run:
 	update "User Data" in Motive to match [ fbm1 | tbmh | tbmw ]_mocap.yaml
@@ -26,15 +25,17 @@ pre:
 	roslaunch rockin_scoring fbm1[h|w]_acquire_items.launch
 	
 test:
-	fbm[h|w]_env;
 	
 	? log_monitor
 	
-	roslaunch mocap_optitrack mocap.launch
-	rostopic echo /Robot_1/pose
+	? roslaunch mocap_optitrack mocap.launch
+	? rostopic echo /Robot_1/pose
 	
-	roslaunch rockin_scoring fbm1h_test.launch
+	fbm[h|w]_env; roslaunch rockin_scoring fbm1h_test.launch
 	
 run:
 	roslaunch rockin_scoring fbm1[h|w].launch
 	roslaunch rockin_scoring fbm1[h|w]_manual.launch
+	
+	
+	
