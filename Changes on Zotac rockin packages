@@ -1,0 +1,5 @@
+
+log_monitor:
+Changed the path of the logs bags.
+
+x_log_mocap.launch refactoring based on the new configuration.

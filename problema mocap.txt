@@ -1,0 +1,72 @@
+The output of the benchmark:
+
+The following rockin_mocap bags will be used:
+../../bags/rockin_airlab/log_airlab_mocap_2015-07-24-09-54-28_1.bag
+../../bags/rockin_airlab/log_airlab_mocap_2015-07-24-08-54-28_0.bag
+
+Opening bags...
+Bags opened.
+waypoints mean distance error    A =  None
+waypoints mean orientation error B =  None
+[WARNING] consecutive mocap poses very distant in time: t1,t2 = 1437721699.71[s],1437721703.99[s] difference: 4275.09880066 milliseconds
+trajectory mean distance error     =  0.23390368175
+trajectory mean orientation error  =  0.0190161067537
+
+It can be seen by playing the bag with the command
+	rosbag play -s 830 -r 0.3 log_airlab_mocap_2015-07-24-08-54-28_0.bag
+that the seq number is continuous but the time jumps. So maybe rockin_mocap didn't publish any mocap pose or Motive stoped sending the data.
+
+(previous messages)
+---
+header: 
+  seq: 99737
+  stamp: 
+    secs: 1437721699
+    nsecs: 713690081
+  frame_id: world
+pose: 
+  position: 
+    x: 0.342662900686
+    y: 0.256243377924
+    z: 0.984899699688
+  orientation: 
+    x: 0.0027147193905
+    y: -0.0079977735877
+    z: -0.026240831241
+    w: 0.999619960785
+---
+header: 
+  seq: 99738
+  stamp: 
+    secs: 1437721703
+    nsecs: 988788872
+  frame_id: world
+pose: 
+  position: 
+    x: -0.489074856043
+    y: 0.349790394306
+    z: 0.999876797199
+  orientation: 
+    x: -0.000299343431834
+    y: -0.000294494966511
+    z: 0.00011333864677
+    w: 1.0
+---
+header: 
+  seq: 99739
+  stamp: 
+    secs: 1437721703
+    nsecs: 997084137
+  frame_id: world
+pose: 
+  position: 
+    x: -0.48909842968
+    y: 0.349795341492
+    z: 0.999871909618
+  orientation: 
+    x: -0.000101680074295
+    y: -8.28910851851e-05
+    z: 6.2691156927e-05
+    w: 1.0
+---
+(etc)

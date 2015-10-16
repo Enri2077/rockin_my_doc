@@ -1,0 +1,36 @@
+Add source ~/workspace/utils/setup.bash to .bashrc if not already added
+
+On GTL (HP):
+pre:
+test:
+	[t|f]bm[h|w]_env;
+	
+	log_monitor
+	
+	roslaunch mocap_optitrack mocap.launch
+	rostopic echo /Robot_1/pose
+	
+	roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
+	
+run:
+	roslaunch rockin_mocap [ fbm1 | tbmh | tbmw ]_log_mocap.launch
+	
+
+
+On BMML (Zotac):
+pre:
+	roslaunch rockin_scoring fbm1[h|w]_acquire_items.launch
+	
+test:
+	[t|f]bm[h|w]_env;
+	
+	log_monitor
+	
+	roslaunch mocap_optitrack mocap.launch
+	rostopic echo /Robot_1/pose
+	
+	roslaunch rockin_scoring fbm1h_test.launch
+	
+run:
+	roslaunch rockin_scoring fbm1[h|w].launch
+	roslaunch rockin_scoring fbm1[h|w]_manual.launch

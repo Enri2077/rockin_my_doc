@@ -1,0 +1,6 @@
+
+After the ROS installation and the workspace setup:
+·download the mocap_optitrack ROS package from https://github.com/ros-drivers/mocap_optitrack (downloaded as mocap_optitrack-master.zip)
+·extract the content of the downloaded archive, rename it as "mocap_optitrack" and place the folder in YOUR_WORKSPACE/src
+
+
