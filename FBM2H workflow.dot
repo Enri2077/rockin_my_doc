@@ -1,0 +1,72 @@
+digraph {
+	label="RoCKIn@Home - Benchmarking Box states throughout FBM2H";
+	rankdir=TD
+	
+	node[shape="oval", style="", width=3.35, height=0.75]
+		start				[label="START"];
+		waiting_client		[label="WAITING CLIENT"];
+		
+		ready				[label="READY"];
+		transmitting_goal	[label="TRANSMITTING GOAL\npayload: waypoints list, etc"];
+		executing_goal		[label="EXECUTING GOAL"];
+		waiting_result		[label="WAITING RESULT\npayload: reached waypoint 0"];
+		
+		ready1				[label="READY"];
+		transmitting_goal1	[label="TRANSMITTING GOAL\nø"];
+		executing_goal1		[label="EXECUTING GOAL"];
+		waiting_result1		[label="WAITING RESULT\npayload: reached waypoint i"];
+		
+		ready2				[label="READY"];
+		waiting_result2		[label="WAITING RESULT\npayload: reached waypoint n"];
+		
+		transmitting_score	[label="TRANSMITTING SCORE\npayload: score"];
+		end					[label="END"];
+	
+	
+	
+	
+	subgraph cluster_startup {
+		start ->
+		waiting_client;
+		labeljust = r;
+		label = "start up";
+		
+	}
+	
+	subgraph cluster_s0 {
+		waiting_client ->
+		ready ->
+		transmitting_goal ->
+		executing_goal ->
+		waiting_result;
+		labeljust = r;
+		label = "segment 0";
+	}
+	
+	subgraph cluster_si {
+		waiting_result ->
+		ready1 -> 
+		transmitting_goal1 ->
+		executing_goal1 ->
+		waiting_result1;
+		labeljust = r;
+		label = "segment i";
+	}
+	
+	subgraph cluster_sn {
+		waiting_result1 -> waiting_result2[style=dotted];
+		labeljust = r;
+		label = "segment n";
+	}
+	
+	subgraph cluster_end {
+		waiting_result2 ->
+		ready2 ->
+		transmitting_score -> end;
+		labeljust = r;
+		label = "end";
+	}
+	
+
+
+}
