@@ -1,0 +1,45 @@
+digraph {
+	label="RoCKIn@Home - Benchmarking Box states throughout FBM2H";
+	rankdir=TD
+	
+	node[shape="oval", style=""]
+		start[label="START"];
+		waiting_client[label="WAITING CLIENT"];
+		ready[label="READY"];
+		transmitting_goal[label="TRANSMITTING GOAL\npl: waypoints list, etc"];
+		executing_goal[label="EXECUTING GOAL"];
+		waiting_result[label="WAITING RESULT\npl: reached waypoint 0"];
+		
+		ready1[label="READY"];
+		transmitting_goal1[label="TRANSMITTING GOAL\nø"];
+		executing_goal1[label="EXECUTING GOAL"];
+		waiting_result1[label="WAITING RESULT\npl: reached waypoint i"];
+		
+		ready2[label="READY"];
+		waiting_result2[label="WAITING RESULT\npl: reached waypoint n"];
+		
+		transmitting_score[label="TRANSMITTING SCORE\npl: score"];
+		end[label="END"];
+
+	start -> waiting_client[weight=10, width=2];
+	waiting_client -> ready[weight=10, width=2];
+	
+	ready -> transmitting_goal[weight=10, width=2];
+	transmitting_goal -> executing_goal[weight=10, width=2];
+	executing_goal -> waiting_result[weight=10, width=2];
+	waiting_result -> ready1[weight=10, width=2];
+	
+	ready1 -> transmitting_goal1[weight=10, width=2];
+	transmitting_goal1 -> executing_goal1[weight=10, width=2];
+	executing_goal1 -> waiting_result1[weight=10, width=2];	
+	waiting_result1 -> waiting_result2[style=dotted];
+	
+	waiting_result2 -> ready2[weight=10, width=2];
+	ready2 -> transmitting_score[weight=10, width=2];
+	transmitting_score -> end[weight=10, width=2];
+	
+	
+	subgraph start_up { label="start up"; start; waiting_client;}
+
+
+}
