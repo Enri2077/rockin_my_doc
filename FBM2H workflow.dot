@@ -2,7 +2,7 @@ digraph {
 	label="RoCKIn@Home - Benchmarking Box states throughout FBM2H";
 	rankdir=TD
 	
-	node[shape="oval", style="", width=3.35, height=0.75]
+	node[shape="oval", style="", width=3.5, height=0.75]
 		start				[label="START"];
 		waiting_client		[label="WAITING CLIENT"];
 		
@@ -44,7 +44,7 @@ digraph {
 	}
 	
 	subgraph cluster_si {
-		waiting_result ->
+		waiting_result -> ready1[style=dotted];
 		ready1 -> 
 		transmitting_goal1 ->
 		executing_goal1 ->
