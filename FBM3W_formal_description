@@ -1,0 +1,34 @@
+0.1. Safety Check
+0.2. The robot is placed in front of the test area
+1.   Selection of path
+2.1. The robot places its end-effector on top of reference_position with a fixed offset from the ground
+2.2. A manual calibration is done by adjusting the position of the printed path
+3.1. The robot places its end-effector on top of starting_position with a fixed offset from the ground
+3.2. A manual calibration is done by adjusting the position of the printed path
+3.3. The robot’s and the ground truth system’s reference frames are synchronized using reference_position and starting_position
+4.1. The CFH lets the robot starts following the path
+4.2. The robot's position is being collected with the ground truth system to generate robot_path
+5.1. The robot stops at the end point of the path and reports the termination to the CFH.
+5.2. The accuracy is computed between robot_path and target_path
+6.   The score is evaluated
+
+From the benchmarking point of view, a run consists in steps 1-5. 5 runs are executed.
+The scoring provided by the benchmarking box is based on:
+ the most accurate run;
+ the number of completely executed runs (path movements) (maximum 5);
+ the execution time (if less than the maximum allowed for the benchmark).
+ 
+
+Accuracy evaluation:
+Given robot_path and target_path, l a parameter in [0, 1],
+let r(l) = ( x_r(l), y_r(l) ) the parametric representation of the robot path, and
+let t(l) = ( x_t(l), y_t(l) ) the parametric representation of the target path.
+Note: r(0) = t(0) = starting_position; r(1) is the end point of the robot's path; t(1) is the end point of the target path.
+
+The accuracy is computed as 1/N sum{ d(r(l), t(l)) }, l in L.
+Where,
+ L is a subset (1) of the values of l to which corresponds a measure of the robot's path from the ground truth system;
+ N = |L|;
+ d is the Euclidean distance.
+
+(1): because of the great amount of positions provided by the ground truth system, just a subset is enough to precisely approximate the robot's path.
