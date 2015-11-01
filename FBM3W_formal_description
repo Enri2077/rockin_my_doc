@@ -19,16 +19,42 @@ The scoring provided by the benchmarking box is based on:
  the number of completely executed runs (path movements) (maximum 5);
  the execution time (if less than the maximum allowed for the benchmark).
 
+
+
 Accuracy evaluation:
 Given robot_path and target_path, l a parameter in [0, 1],
 let r(l) = ( x_r(l), y_r(l) ) the parametric representation of the robot path, and
 let t(l) = ( x_t(l), y_t(l) ) the parametric representation of the target path.
 Note: r(0) = t(0) = starting_position; r(1) is the end point of the robot's path; t(1) is the end point of the target path.
 
-The accuracy is computed as 1/N sum{ d(r(l), t(l)) }, l in L.
+The accuracy is computed as 1/N sum{ d(r(l), t(l)) }, l in Ls.
 Where,
- L is a subset (1) of the values of l to which corresponds a measure of the robot's path from the ground truth system;
- N = |L|;
+ Ls is a subset of Lgt (s: sampling)
+ Lgt are the values of l to which corresponds a measure of the robot's path from the ground truth system;
+ N = |Ls|;
  d is the Euclidean distance.
 
-(1): because of the great amount of positions provided by the ground truth system, just a subset is enough to precisely approximate the robot's path.
+
+
+Robot path reconstruction from the ground truth system:
+
+ Because of the great amount of positions provided by the ground truth system, a subset of these is enough to precisely approximate the robot's path.
+ 
+ Since the ground truth system introduces a measurement error on every position that it provides, if the path is simply composed by all the measured positions (or even a subset of positions sampled at a certain frequency), the measured path results in the real path plus a random distribution.
+ 
+ This means that the measured path would consist in a tangle when the robot stays still and in a sort of "telephone cord" when the robot is moving.
+ This effect tends to be the less rilevant the faster the robot is moving but it also depends by the sampling frequency (a higher fs cause a tangler measured path).
+ 
+ Assuming the distribution is constant in time and has a mean error of epsilon,
+ then even when the robot stays still, the path grows by epsilon for each sample.
+ This means that the path's length suffers a constant growth summed to the real one.
+ 
+ It get worse, if the mean error varies in time, the length error do too.
+ 
+ This constitutes a problem since the path is "indexed" by its (normalised) length.
+ In fact, lengthwise, the weigh of any small segment on the path would depend by the measurement error distribution on that segment.
+ 
+ Solution:
+ Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot_path sampled positions that are at least d_min distant.
+ More precisely the samples' minimum distance d_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d_min.
+ 
