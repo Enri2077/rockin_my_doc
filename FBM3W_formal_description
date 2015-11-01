@@ -13,11 +13,11 @@
 6.   The score is evaluated
 
 From the benchmarking point of view, a run consists in steps 1-5. 5 runs are executed.
+
 The scoring provided by the benchmarking box is based on:
  the most accurate run;
  the number of completely executed runs (path movements) (maximum 5);
  the execution time (if less than the maximum allowed for the benchmark).
- 
 
 Accuracy evaluation:
 Given robot_path and target_path, l a parameter in [0, 1],
