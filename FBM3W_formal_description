@@ -6,7 +6,7 @@
 3.1. The robot places its end-effector on top of starting_position with a fixed offset from the ground
 3.2. A manual calibration is done by adjusting the position of the printed path
 3.3. The robot’s and the ground truth system’s reference frames are synchronized using reference_position and starting_position
-4.1. The CFH lets the robot starts following the path
+4.1. The CFH lets the robot start following the path
 4.2. The robot's position is being collected with the ground truth system to generate robot_path
 5.1. The robot stops at the end point of the path and reports the termination to the CFH.
 5.2. The accuracy is computed between robot_path and target_path
@@ -58,3 +58,5 @@ Robot path reconstruction from the ground truth system:
  Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot_path sampled positions that are at least d_min distant.
  More precisely the samples' minimum distance d_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d_min.
  
+Managing possible missing segments of robot_path (because of the ground truth system's ocasional tracking loose):
+ TODO
