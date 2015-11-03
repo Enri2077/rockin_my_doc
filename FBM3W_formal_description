@@ -1,11 +1,14 @@
 0.1. Safety Check
 0.2. The robot is placed in front of the test area
+
 1.   Selection of path
 2.1. The robot places its end-effector on top of reference_position with a fixed offset from the ground
-2.2. A manual calibration is done by adjusting the position of the printed path
+2.2. robot_reference_position is acquired by the ground truth system
+2.3. A manual calibration is done by adjusting the position of the printed path
 3.1. The robot places its end-effector on top of starting_position with a fixed offset from the ground
-3.2. A manual calibration is done by adjusting the position of the printed path
-3.3. The robot’s and the ground truth system’s reference frames are synchronized using reference_position and starting_position
+3.2. robot_starting_position is acquired by the ground truth system
+3.3. A manual calibration is done by adjusting the position of the printed path
+3.4. The robot’s and the ground truth system’s reference frames are synchronized using reference_position and starting_position
 4.1. The CFH lets the robot start following the path
 4.2. The robot's position is being collected with the ground truth system to generate robot_path
 5.1. The robot stops at the end point of the path and reports the termination to the CFH.
