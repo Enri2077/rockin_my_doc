@@ -1,22 +1,22 @@
 6.2. FBM2H:
 
-6.2.1. (d2.1.3: 5.2.1 Functionality Description)
-
-6.2.2. (d2.1.3: 5.2.3 Input Provided)
-
-6.2.3. (d2.1.3: 5.2.4 Expected Robot Behavior or Output)
-+ explanation of segment:
-Definition of segment i: the robot's path from waypoint i-1 to waypoint i; segment 0: robot's path from starting pose to waypoint 0.
+6.2.1. (from d2.1.3: 5.2.1 Functionality Description)
+This functionality benchmark aims at assessing the capabilities of a robot to correctly and autonomously navigate in a typical apartment, containing furniture and objects spread through the apartment’s rooms. The benchmark will use the RoCKIn@Home testbed. From a predefined starting position, the robot will receive a list of waypoints that it must visit to reach a goal position.
 
 6.2.4. ROS nodes
+When the benchmark is launched, these nodes are run: bmbox (fbm2h), world_map, map_server, mocap, record.
 
-6.2.4.1. benchmark:
+Of special interest are the following:
+
+6.2.4.1. fbm2h:
 This is the ROS node in charge of running the benchmark.
 The source is stored in rockin_scoring/scripts/fbm2h.
 
+The i-th segment is defined as: the robot's path from waypoint i-1 to waypoint i; segment 0: robot's path from starting pose to waypoint 0.
+
 The script works as follows:
 
-	Start up phase:
+· Start up phase:
 In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING_CLIENT.
 
 When the benchmark is launched, the robot is in the starting position.
@@ -24,7 +24,7 @@ The transform from markerset to robot odometric center is loaded as parameter, f
 This is used to evaluate the robot pose when it reaches a waypoint.
 The benchmark's parameters are loaded as well (see Goal data format TODO: link).
 
-	Execution on each segment:
+· Execution on each segment:
 On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT.
 
 On the first segment (from starting pose to waypoint 0) BmBoxState.TRANSMITTING_GOAL's payload is the goal data, on every other segment (segment i: from waypoint i-1 to waypoint i) the payload is empty.
@@ -36,11 +36,25 @@ The markerset pose is acquired from the mocap system and the robot pose computed
 The accuracy of the robot pose wrt the waypoint pose is computed (see d2.1.3: 5.2.7).
 The segment time is evaluated.
 
-	End of benchmark:
+· End of benchmark:
 In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_SCORE, BmBoxState.END.
-The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see Score data format)
+The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see Score data format TODO: link)
 
+6.2.4.2. record
+When the benchmark is launched the record node will log the following topics:
 
+/fbm2h/bmbox_state
+/fbm2h/client_state
+/fbm2h/refbox_state
+/fbm2h/map
+/fbm2h/map_metadata
+/fbm2h/robot_at_home/pose
+/fbm2h/robot_at_home/pose2d
+/fbm2h/info
+/tf
+/rosout
+
+Resulting logs are stored in ~/logs/.
 
 
 
@@ -59,7 +73,7 @@ goal:
   - [1.73485660553, 3.14053320885, -0.0238841612192]
   - [-3.10801386833, 4.88111925125, -1.52614450226]
   - [4.30852985382, 3.19435501099, 2.20723667763]
-  num_waypoints: 5 # computed by the benchmark's script as len(waypoints)
+  num_waypoints: 5 # computed by the benchmark's script as length(waypoints)
   starting_pose:
     [0.0, 0.0, 0.0]
   penalty_time: # not used in the benchmark, needed by the refbox
@@ -139,6 +153,7 @@ The benchmark is completely autonomous and doesn't require any user input during
 Only at the end of the benchmark it is prompted the number of hits (as referred by the referee).
 
 6.2.5.2. Testing with mocap system
+To test the benchmark execute this command:
 $ roslaunch rockin_scoring fbm2h_test.launch team_name:=identity
 
 Three terminals open for fbm2h_refbox_test, fbm2h_client_test and fbm2h.
@@ -154,22 +169,19 @@ To test the benchmark execute these commands, in this order and each in a differ
 $ roscore
 $ rosparam set use_sim_time true
 $ rockin_mocap/test_logs$ rosbag play --clock log_fbm2h_mocap_2015-10-23-16-15-40_0.bag
-$ roslaunch rockin_scoring fbm2h_test_optitrackless.launch # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
+$ roslaunch rockin_scoring fbm2h_test_optitrackless.launch team_name:=identity # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
 
 A recorded bag is available (rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0.bag) and in the file rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0_reached_waypoint_timing.yaml there are the reached_waypoint "timestamps" of the recorded robot.
 You have to send them manually through the fmb2h_client_test terminal.
 
-
-
-
-
 6.2.6. Markerset-robot transform acquisition:
-With this package it's possible to acquire the tf transform between the markerset and the robot through the mocap system (in ROS context. i.e. the coordinate system is the one that tf uses).
+With this package it's possible to acquire the tf transform from the markerset to the robot through the mocap system.
 
 To acquire a transform, position the robot in (x=0, y=0, theta=0) and launch rockin_acquire_markerset_transform by executing the command
 $ roslaunch rockin_acquire_markerset_transform acquire.launch
-The user is then prompted the team_name and the transform is saved in ~/logs/transform-<team_name>.yaml.
+It is then prompted the team_name.
+
+The transform is saved in ~/logs/transform-<team_name>.yaml.
 
 In rockin_acquire_markerset_transform/config/mocap.yaml there is the mocap cofiguration. It is not needed to configure this normally.
-
 
