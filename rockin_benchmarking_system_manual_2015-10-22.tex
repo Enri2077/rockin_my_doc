@@ -1104,12 +1104,11 @@ Resulting logs are stored in the \emph{\logdir} folder.
 %===============================================================
 \subsection{Functional Benchmark 2 for \ro@Home: navigation}
 \label{sec:fbm2h}
-This functionality benchmark aims at assessing the capabilities of a robot to correctly and autonomously navigate in a typical apartment, containing furniture and objects spread through the apartment’s rooms. The benchmark will use the RoCKIn@Home testbed. From a predefined starting position, the robot will receive a list of waypoints that it must visit to reach a goal position.
-For a complete description of the rules see d2.1.3: 5.2
+This functionality benchmark aims at assessing the capabilities of a robot to correctly and autonomously navigate in a typical apartment, containing furniture and objects spread through the apartment’s rooms. The benchmark will use the \ro@Home testbed. From a predefined starting position, the robot will receive a list of waypoints that it must visit to reach a goal position.
+For a complete description of the rules see d2.1.3: 5.2.
 
 The motion capture system is used to acquire the actual pose of the robot and evaluate the position and orientation accuracy.
-
-For this purpose, a markerset is fixed on the robot.
+For this purpose a markerset is fixed on the robot.
 
 \subsubsection{ROS nodes}
 
@@ -1119,7 +1118,9 @@ When the benchmark is launched, these nodes are run: bmbox (fbm2h), world_map, m
 
 Of special interest are the following:
 
-\subsubsubsection{fbm2h}
+
+\subsubsubsection{fbm2h benchmark node}
+\label{sec:fbm2h benchmark node}
 
 This is the ROS node in charge of running the benchmark.
 The source is stored in rockin_scoring/scripts/fbm2h.
@@ -1132,9 +1133,9 @@ The script works as follows:
 In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING_CLIENT.
 
 When the benchmark is launched, the robot is in the starting position.
-The transform from markerset to robot odometric center is loaded as parameter, for the appropriate team (specifyed as argument, see Execution TODO: link).
+The transform from markerset to robot odometric center is loaded as parameter, for the appropriate team (specifyed as argument, see \ref{sec:FBM2H Execution}).
 This is used to evaluate the robot pose when it reaches a waypoint.
-The benchmark's parameters are loaded as well (see Goal data format TODO: link).
+The benchmark's parameters are loaded as well (see \ref{sec:Goal data format}).
 
 · Execution on each segment:
 On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT.
@@ -1150,13 +1151,15 @@ The segment time is evaluated.
 
 · End of benchmark:
 In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_SCORE, BmBoxState.END.
-The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see Score data format TODO: link)
+The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see \ref{sec:Score data format})
 
 
-\subsubsubsection{record}
+\subsubsubsection{fbm2h record node}
+\label{sec:fbm2h record node}
 
 When the benchmark is launched the record node will log the following topics:
 
+\begin{verbatim}
 /fbm2h/bmbox_state
 /fbm2h/client_state
 /fbm2h/refbox_state
@@ -1167,6 +1170,7 @@ When the benchmark is launched the record node will log the following topics:
 /fbm2h/info
 /tf
 /rosout
+\end{verbatim} 
 
 Resulting logs are stored in ~/logs/.
 
@@ -1180,10 +1184,12 @@ The first is found in rockin_scoring/config/fbm2h.yaml and rockin_scoring/config
 
 
 \subsubsubsection{Goal data format}
+\label{sec:Goal data format}
 
 This is a summary of the goal's format. The goal is sent to the refbox as a string in yaml format.
 The goal corresponds to the FBM2H's configuration, found in rockin_scoring/config/fbm2h.yaml, although num_waypoints is added before it is sent.
 
+\begin{verbatim}
 goal:
   waypoints: # list of Pose2D poses
   - [-2.12524914742, -1.60717535019, 1.55841375286]
@@ -1198,17 +1204,23 @@ goal:
     120.0
   timeout_time: # not used in the benchmark, needed by the refbox
     120.0
+\end{verbatim} 
 
 
 \subsubsubsection{Transform data format}
+\label{sec:Transform data format}
 
 To run FBM2H, it is needed to provide a transform by specifying the argument team_name when launching the benchmark (see following paragraphs).
 
-The transform is acquired as described in 6.2.6. Markerset-robot transform acquisition TODO: link
+The transform is acquired as described in \ref{sec:Markerset-robot transform acquisition}.
 
 The transform is saved in a yaml file with the following structure:
-transform-<team_name>.yaml
 
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=transform-<team_name>.yaml]
 robot_info: <team_name> # the team's name or any other identifier
 transform_timestamp: <%Y-%m-%d_%H:%M:%S> # the acquisition timestamp
 marker_to_robot_transform:
@@ -1217,11 +1229,16 @@ marker_to_robot_transform:
 robot_to_marker_transform:
 - [<x>, <y>, <z>] # the translation from robot to markerset
 - [<qx>, <qy>, <qz>, <qw>] # the orientation of the markerset wrt to the robot
+    \end{lstlisting}
+	\end{minipage}
+\end{figure}
+
 
 The identity transform, that can be used during testing:
-
-transform-identity.yaml
-
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=transform-identity.yaml]
 robot_info: identity
 transform_timestamp: 0
 marker_to_robot_transform:
@@ -1230,13 +1247,18 @@ marker_to_robot_transform:
 robot_to_marker_transform:
 - [0.0, 0.0, 0.0]
 - [0.0, 0.0, 0.0, 1.0]
+    \end{lstlisting}
+	\end{minipage}
+\end{figure}
 
 
 \subsubsubsection{Score data format}
+\label{sec:Score data format}
 
 This is a summary of the score's format.
 The score is sent to the refbox at the end of the benchmark as a string in yaml format.
 
+\begin{verbatim}
 position_accuracy
 orientation_accuracy
 execution_time
@@ -1256,10 +1278,12 @@ segments_details: # details for each segment
     start_segment_time
     target_pose: # the pose of the waypoint
     timeout: false # always false
+\end{verbatim} 
 
 %---------------------------------------------------------------
 
 \subsubsection{Execution}
+\label{sec:FBM2H Execution}
 
 Before executing the benchmark,
 · acquire the robot's transforms (although it is possible to use the identity transform during testing);
@@ -1269,7 +1293,9 @@ Before executing the benchmark,
 \subsubsubsection{Executing with the refbox}
 
 To run the benchmark, execute the command
+\begin{verbatim}
 $ roslaunch rockin_scoring fbm2h.launch team_name:=<team_name> # <team_name> must be the same as in transform-<team_name>.yaml
+\end{verbatim} 
 
 A terminal opens, where the fbm2h script's output is displayed.
 The benchmark is completely autonomous and doesn't require any user input during the exeution.
@@ -1279,7 +1305,9 @@ Only at the end of the benchmark it is prompted the number of hits (as referred 
 \subsubsubsection{Testing with mocap system}
 
 To test the benchmark execute this command:
+\begin{verbatim}
 $ roslaunch rockin_scoring fbm2h_test.launch team_name:=identity
+\end{verbatim} 
 
 Three terminals open for fbm2h_refbox_test, fbm2h_client_test and fbm2h.
 The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox by publishing the FSM' state.
@@ -1290,35 +1318,35 @@ In the Client terminal you have to confirm when to send the result (correspondin
 \subsubsubsection{Testing without mocap system}
 
 This test consists in running the normal test without launching the mocap_optitrack, rosbag record, map_server and tf publisher but rather playing a bag that provides the topics of these nodes.
-The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox like in 6.2.5.2. Testing with mocap system TODO: link
+The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox like in Testing with mocap system}
 
 To test the benchmark execute these commands, in this order and each in a different terminal:
+\begin{verbatim}
 $ roscore
 $ rosparam set use_sim_time true
 $ rockin_mocap/test_logs$ rosbag play --clock log_fbm2h_mocap_2015-10-23-16-15-40_0.bag
 $ roslaunch rockin_scoring fbm2h_test_optitrackless.launch team_name:=identity # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
+\end{verbatim} 
 
 A recorded bag is available (rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0.bag) and in the file rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0_reached_waypoint_timing.yaml there are the reached_waypoint "timestamps" of the recorded robot.
 You have to send them manually through the fmb2h_client_test terminal.
 
-$ TODO format without crazy colours
-
-
 
 \subsubsection{Markerset-robot transform acquisition}
+\label{sec:Markerset-robot transform acquisition}
 
 With this package it's possible to acquire the tf transform from the markerset to the robot through the mocap system.
 
 To acquire a transform, position the robot in (x=0, y=0, theta=0) and launch rockin_acquire_markerset_transform by executing the command
+\begin{verbatim}
 $ roslaunch rockin_acquire_markerset_transform acquire.launch
+\end{verbatim} 
 It is then prompted the team_name.
 
 The transform is saved in ~/logs/transform-<team_name>.yaml.
 
 In rockin_acquire_markerset_transform/config/mocap.yaml there is the mocap cofiguration. It is not needed to configure this normally.
 
-
-$ TODO format without crazy colours
 
 \clearpage
 
