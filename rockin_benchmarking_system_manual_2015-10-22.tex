@@ -1,0 +1,1370 @@
+\title{\textbf{The RoCKIn Benchmarking System}}
+\author{Martino Migliavacca,\\ Giulio Fontana,\\ Enrico Piazza
+%	\texttt{martino.migliavacca@polimi.it}
+}
+\date{\today}
+
+\documentclass[a4paper]{article}
+
+\usepackage{graphviz}
+
+\usepackage{booktabs}
+
+% Hyperref
+\usepackage{hyperref}
+\usepackage{xcolor}
+\definecolor{dark-red}{rgb}{0.5,0,0}
+\definecolor{dark-blue}{rgb}{0.15,0.15,0.4}
+\definecolor{medium-blue}{rgb}{0,0,0.5}
+\hypersetup{
+    colorlinks, linkcolor={black},
+    citecolor={medium-blue}, urlcolor={medium-blue}
+}
+
+% Code listings
+\usepackage{listings}
+\lstset{
+	language = C++,
+	basicstyle = \footnotesize\ttfamily,
+	frame = tb,
+%	frame = single,
+	captionpos = b,
+	tabsize = 2,
+%	linewidth=0.9\columnwidth
+}
+
+\newcommand{\ro}{RoCKIn}
+\newcommand{\rbs}{RoCKIn Benchmarking System}
+\newcommand{\srcdir}{\char`\~/workspace/ros/src/}
+\newcommand{\logdir}{\char`\~/logs/}
+\newcommand{\toolsdir}{\char`\~/workspace/utils/}
+
+\begin{document}
+\maketitle
+
+\clearpage
+
+\tableofcontents
+
+\cleardoublepage
+
+
+%===============================================================
+\section{Introduction}
+
+This document is an operative description and user manual of the \rbs. Additional information about the design, performance and limitations of the system can be found in Deliverable 2.1.8 of project \ro (Description of Ground Truth System V2). The document is organized as follows.
+
+Section 	\ref{sec:overview} provides an overview of the system architecture, with details about the involved subsystems and the network configuration.
+
+Section \ref{sec:operating} is intended as a user manual: it explains how to set up and operate the system without entering into the details of the specific benchmarks.
+
+Section \ref{sec:management} explains how the benchmarks that are managed by the \rbs operate, and describes the interaction between the system and the Referee Box.
+
+Section \ref{sec:benchmarks} is a detailed description of the benchmarks. This description necessarily refers to a specific version of the benchmarks, which can differ from one \ro event to another.\\
+
+\textsc{NOTE. This version of the document refers to the setup used for the 2015 \ro Competition of Lisbon, Portugal.}
+
+\subsection{Special terms}
+In the following, sometimes \ro-specific terms, acronyms and abbreviations will be used. Here is a list of the most frequent.
+\begin{itemize}
+\item \textbf{BM} = benchmark
+\item \textbf{FBM} = Functionality Benchmark
+\item \textbf{TBM} = Task Benchmark
+\item \textbf{H}, \textbf{@H} = referred to the \ro@Home Competition
+\item \textbf{W}, \textbf{@W} = referred to the \ro@Work Competition
+\item \textbf{GT} = Ground Truth
+\item \textbf{mocap} = motion capture
+\item \textbf{marker set} = configuration of IR-reflective markers mounted on a robot to track its pose
+\item \textbf{ROS} = Robot Operating System\footnote{\url{http://wiki.ros.org/}}
+\item \textbf{OptiTrack} = the Natural Point OptiTrack motion capture system\footnote{\url{http://www.optitrack.com/products/}}
+\item \textbf{Motive} = Natural Point software package for the acquisition of motion capture data
+\end{itemize}
+
+\clearpage
+
+
+%===============================================================
+\section{Overview of the \rbs}
+\label{sec:overview}
+
+%---------------------------------------------------------------
+\subsection{System Architecture}
+Figure \ref{fig:whole_system} highlights the main elements of the \rbs and shows that it is composed of several interconnected subsystems. Greyed elements represent external systems which interact with the \rbs but are external to it.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{dia/data_acquisition_competition_2015_Lisbon.png}
+  \caption{The \rbs. Greyed elements are external systems that the \rbs interacts with.}
+\end{figure}
+\label{fig:whole_system}
+
+Some of the machines shown in Figure \ref{fig:whole_system} need to exchange data during the execution of the benchmark. They are:
+\begin{enumerate}
+\item two PCs acquiring motion capture (\textbf{mocap@H, mocap@W}) data from special cameras;
+\item one PC (\textbf{GTlogger}) dedicated to processing mocap data to extract and log ground truth (\textit{GT}) pose data;
+\item one PC (\textbf{BMmanager}) dedicated to managing benchmarks and logging the data describing their execution.
+\end{enumerate}
+These machines are interconnected via an ethernet wired network (\textit{eth network}). One additional PC is used to collect and save robot-generated data, logged on USB keys (provided by \ro) by the robot subjected to the benchmarks.
+External systems interacting with the \rbs include the Referee Box (which organizes competition activities, interfaces with devices belonging to the testbed and interacts with human referees) and the robot itself.
+
+%---------------------------------------------------------------
+\subsection{Motion Capture}
+\label{sec:mocap}
+
+\ro is a project focusing on robot benchmarking through competitions. To be able to benchmark actual robot performance, it is necessary to be able to record exactly what actions the robot actually performs. The information taken as a reference representation of what happened during the benchmarks is generally identified with the name \textbf{Ground Truth}, or GT. For \ro, the most important category of GT data are those describing robot pose. These are captured by a dedicated commercial \textit{motion capture} ("mocap") system: the OptiTrack system by Natural Point~\footnote{\url{http://www.optitrack.com/products/}}.
+OptiTrack relies on special infrared cameras to detect the location of IR-reflective markers. A set of at least 3 of these markers having fixed distances between each other can be defined as a \textit{rigid body} in OptiTrack. The system can then detect, track and output the 6DOF pose of the rigid body: if this is rigidly affixed to a robot component, the same data describe the pose of the component. 
+
+A comprehensive description of the \ro motion capture setup, including an in-depth analysis of its real-world performance and limitations, is available in Deliverable 2.1.8 of project \ro (Description of Ground Truth System V2).
+
+To track robots, \ro uses special \textit{marker sets} composed of a laminated wood base fitted with 5 markers, as shown in Figure \ref{fig:markerset}. To get an idea of the dimensions of a marker set, consider that each marker has a diameter of 19 mm, and that the marker set base fits within a circle having a diameter of 170 mm. Additional, special-purpose marker configurations are used for the object recognition Functionality Benchmarks: these will be described in Section \ref{sec:benchmarks}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/marker_set.jpg}
+  \caption{One of the \textit{marker sets} mounted on robots so that they can be tracked by the \rbs.}
+\end{figure}
+\label{fig:markerset}
+
+In the setup for the \ro Competition, two separate OptiTrack systems are used. Each of these is dedicated to one of the testbeds used by the \ro Competition. The \ro@Home testbed is used for the \ro@Home Task Benchmarks and Functionality Benchmarks; the \ro@Work testbed is used for the \ro@Work Task Benchmarks and Functionality Benchmarks.
+
+Each motion capture system includes a dedicated data acquisition PC: a Windows PC running the OptiTrack Motive software~\footnote{\url{http://www.optitrack.com/products/motive/}}, which is required to interface with the cameras and track the marker sets. The PCs used are called \textbf{mocap@H} (\textit{Dell Quad-core}) for @Home and \textbf{mocap@W} (\textit{Shuttle PC}) for @Work. Acquired mocap data is streamed over UDP to the clients, i.e. the Linux machines that process and log them.
+
+Careful configuration of the Motive software is crucial for the performance of the \rbs. A short guide to configure the system is provided by Section \ref{mocap_config}.
+
+
+%---------------------------------------------------------------
+\subsection{Networking}
+The ethernet network connecting the elements of the \rbs is subdivided into two logical subnets: the benchmarking systems are connected to the 10.0.0.0/24 subnet, while the Referee Box and other appliances not related to benchmarking are on the 192.168.1.0/24 subnet.
+A router acts as a gateway between the 10.0.0.0/24 subnet (connected to one of the "LAN" ports) and the 192.168.1.0/24 network (connected to the "WAN" port).
+
+For ground thruth (GT) mocap logging, a Linux PC running ROS is used, called \textbf{GTlogger} (\textit{HP laptop}). A ROS node receives the UDP packets broadcasted by the Motive software and publishes, for each tracked marker set, the corresponding \emph{tf} reference frame, the 3D pose, and the 2D pose. The GT is logged by a set of other ROS nodes, as described in Section~\ref{sec:operating}.
+
+To manage the benchmarks, a Linux PC running ROS is used, called \textbf{BMmanager} (\textit{Zotac}). This PC receives data both from the Referee Box and from the motion capture systems (the benchmarks require, in fact, to compare them), and runs a set of ROS nodes to interact with the Referee Box, manage the execution of the benchmarks, and evaluate the final score, as described in Section~\ref{sec:benchmarks}.
+
+The motion capture system is configured to use the network 10.0.0.0/24.
+All the PC have static IP addresses, and a router has been used to provide connection to the Internet.
+As the Functional Benchmarks need to interact with the Referee Box, the BMmanager PC is configured to use two IP addresses: 10.0.0.14 to communicate with the motion capture system, and 192.168.1.2 to communicate with the refbox.
+For this reason, the FBM management box, which needs to communicate with both the OptiTrack System and the Referee Box, has two IP addresses configured (by defining an alias for eth0).
+Table \ref{tab:network} summarizes the network configuration of the \rbs.
+\\
+
+\begin{figure}[h!]
+\label{tab:network}
+  \begin{tabular}{llll}
+  \toprule
+  PC                     & IP address  & Netmask        & Gateway    \\
+  \midrule
+  mocap@H                & 10.0.0.11   & 255.255.255.0 & 10.0.0.254 \\
+%  Mocap TBM@Home PC     & 10.0.0.12   & 255.255.255.0 & 10.0.0.254 \\
+  mocap@W                & 10.0.0.13   & 255.255.255.0 & 10.0.0.254 \\
+  BMmanager              & 10.0.0.14   & 255.255.255.0 & 10.0.0.254 \\
+  BMmanager (alias)      & 192.168.1.2 & 255.255.255.0 &            \\
+  GTlogger               & 10.0.0.15   & 255.255.255.0 & 10.0.0.254 \\
+  GTlogger (alias)       & 192.168.1.3 & 255.255.255.0 &            \\
+% Router PC              & 10.0.0.254  & 255.255.255.0 & DHCP       \\
+  Refbox/NTP server      & 192.168.1.1 &               &            \\
+  \bottomrule
+  \end{tabular}
+  \caption{Network configuration for the \rbs.}
+\end{figure}
+
+\textbf{TODO: add details about network setup: switches, routers, ...}
+
+\textbf{TODO: why does the GTlogger have an alias?
+}
+
+%---------------------------------------------------------------
+\subsection{Software packages}
+\label{sec:sw}
+The GTlogger and BMmanager machines rely on software packages written for \ro. These are: (TODO: rewrite, the packages described here are not just the custom ones)
+\begin{itemize}
+\item \textbf{rockin\_mocap}, which performs logging of motion capture data (on GTlogger and BMmanager);
+\item \textbf{rockin\_scoring}, which manages benchmark execution and interfaces with the Referee Box (on BMmanager);
+\item \textbf{rockin\_acquire\_markerset\_transform}\footnote{TODO: repo}, which acquires the tf transform between the robot's odometric centre and its markerset (on BMmanager);
+\item \textbf{mocap\_noise\_statistics}\footnote{TODO: repo}, provides the measurement mean error on a markerset (on BMmanager);
+\item \textbf{mocap\_optitrack}\footnote{\url{http://wiki.ros.org/mocap_optitrack}}, which manages acquisition of motion capture data (on GTlogger and BMmanager);
+\end{itemize}
+
+These are packages written for the ROS middleware\footnote{\url{http://wiki.ros.org/}}. Their operation relies on other ROS packages not specific to \ro: especially important within these is \textit{mocap\_optitrack}, which is used by rockin\_mocap to receive motion capture data streamed by the Motive software and republish them as ROS \textit{topics}.
+
+All of the above packages are located in \srcdir.
+
+In addition to the software packages, a set scripts have been prepared to ease the setup and operation of the \rbs. These will be described in Section \ref{sec:tools}, and are located in directory \toolsdir.
+
+%---------------------------------------------------------------
+\subsection{Clock synchronization}
+Clock synchronization among all machines involved in the benchmarking process (including the robots) is required to enable data matching. Such synchronization is provided using the NTP protocol.
+The GT logging PC and the FBM PC run a NTP client (chrony~\footnote{\url{http://chrony.tuxfamily.org/}}), configured to use the NTP server running on the \ro@Home refbox (IP address 192.168.1.1).
+Listing \ref{lst:chrony} shows the configuration to use on NTP clients to sync with the server.
+
+\begin{figure}[h!]
+\label{lst:chrony}
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=chrony.conf]
+server 192.168.1.1 minpoll 2 maxpoll 4
+initstepslew 2 192.168.1.1
+
+keyfile /etc/chrony/chrony.keys
+commandkey 1
+driftfile /var/lib/chrony/chrony.drift
+maxupdateskew 5
+dumponexit
+dumpdir /var/lib/chrony
+pidfile /var/run/chronyd.pid
+logchange 0.5
+rtcfile /etc/chrony.rtc
+rtconutc
+rtcdevice /dev/rtc 
+sched_priority 1   
+
+local stratum 10
+allow 127.0.0.1/8
+
+# log measurements statistics tracking rtc
+# logdir /var/log/chrony
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+
+%===============================================================
+\section{Ground Truth logging}
+\label{sec:operating}
+
+As explained in Section \ref{sec:overview}, the \rbs has two different tasks:
+\begin{itemize}
+\item logging Ground Truth motion capture data;
+\item managing some of the \ro benchmarks (which includes logging the associated data).
+\end{itemize}
+
+The first activity is performed independently from the second, on a dedicated PC (\textit{GTlogger} in Figure \ref{fig:whole_system}). This section is dedicated to describe how the logging activities of GTlogger are performed. Please note that \textbf{all the filesystem paths in this section refer to the GTlogger machine.}
+
+GTlogger includes three separate loggers, each dedicated to a specific category of ground truth information. Precisely, one is dedicated to the mocap data of the \ro@Home Task Benchmarks, one is dedicated to the mocap data of the \ro@Work Task Benchmarks, and the third is dedicated to the mocap data of all Functionality Benchmarks, both for \ro@Home and \ro@Work. The loggers can be started and stopped independently. There is not a one-to-one correspondence between loggers and motion capture systems, as the OptiTrack systems are two while the loggers are three. 
+
+At the 2015 \ro Competition the area where the Functionality Benchmark take place is located within the \ro@Home testbed, so the very same OptiTrack motion capture system is used for \ro@Home Task Benchmarks, \ro@Home Functionality Benchmarks and \ro@Work Functionality Benchmarks (the second OptiTrack system is used for \ro@Work Task Benchmarks). For this reason,  the first and last of the loggers listed above use the very same data, i.e. those produced by the OptiTrack system of the \ro@Home testbed. However, the logfiles produced by the two loggers differ, as the information that they extract from the data are not the same. For instance, the relevant rigid bodies are not the same for the two loggers. These differences are a consequence of the different configuration files of the two loggers.
+
+In order to perform the logging, the user of the GTlogger machine has to execute three subsequent steps:
+\begin{enumerate}
+\item configure the OptiTrack motion capture system;
+\item configure the logging PC;
+\item run the logging system.
+\end{enumerate}
+
+The following of this section describes each of these steps.
+
+%---------------------------------------------------------------
+\subsection{Configuration}
+
+To configure the mocap acquisition system and the loggers, the following steps must be followed.
+\begin{itemize}
+  \item Via the user interface of the Motive software package, calibrate each of the OptiTrack systems. This includes defining a convenient ground plane and origin (a good choice for the origin is a spot that the robots can easily reach and which is visible to many cameras of the OptiTrack system).
+  \item Via the user interface of the Motive software package, define the rigid bodies to be tracked, and assign them unique IDs\footnote{In Motive, the IDs assigned to a rigid body corresponds to parameter UserData in section "Advanced" of the rigid body properties.}. These IDs will be used in the configuration files of the logging system to refer to the rigid bodies.
+  \item For each logger, edit the relevant \emph{\srcdir mocap.yaml} file to match the rigid body IDs to the required ROS frames and topics.
+  \item For each logger, edit the relevant \emph{\srcdir map.yaml} file to configure the map scale and transformation from the \emph{world frame} (i.e., the origin defined in Motive) to the \emph{map frame}. This is necessary to correctly show where the rigid body poses provided by the OptiTrack system are located in the maps.
+\end{itemize}
+
+\subsubsection{Configuring the Motive software}
+\label{mocap_config}
+Judicious "tweaking" of the operating parameters of Motive can greatly contribute to make rigid body pose acquisition more precise, stable and reliable. Here follows a list of suggested operations:
+\begin{enumerate}
+\item  For all cameras, LED lighting should be set at maximum, in order to maximise the ratio of structured-vs-unstructured light in the observed environment: this will usually require that camera exposure is set at a very low value to avoid overexposure. Exposure effect on marker capture can be seen in the camera image ("tracking" view): overexposure tends to inflate and blur marker images (which may also tend to merge for very close markers), while underexposure deforms them by only making visible the brightest regions. Good exposure leads to round and well-defined marker images.
+\item Luminance threshold is very critical. It should be set at the highest acceptable level, i.e. the highest which does not deform marker images by obscuring their peripheral (and less bright) regions.
+\item If the benchmarks occur in environments where lighting is (partly) natural, expect to have to reset camera exposure (and possibly also luminance threshold) more than once during a day, according to the criteria listed above.
+\item Considering that benchmark environments are quite controlled, no objects which are spuriously similar to the marker sets mounted on the robots should be present. Therefore, it is advisable to increase the probability that the marker set is localized by lowering to 3 the value of parameter "min marker count" that controls how many markers of a rigid body must be localized by the OptiTrack system before it considers to have localized the rigid body.
+\item Usually the marker sets include markers that are so close to each other that the peripheral regions of their images tend to overlap (usually this worsens when the marker set is observed from specific angles). In such case, the \textit{circularity filter} of the Motive software may lead to one or more cameras ignoring some of these markers, thus making rigid body identification more difficult. This behaviour is controlled by the value of the "Circularity" parameter (which is found in the "Reconstruction" panel, section "Options"-"2D Object Filter"). This is a threshold: the lower its value, the more "permissive" Motive becomes in recognizing non-perfectly-circular clusters of pixels as marker images. If there is no risk of spurious marker identifications (as should be in the benchmark environments), lowering "Circularity" from its default value of 0.6 to a value as low as 0.2 or 0.15 can make rigid body tracking more reliable.
+\item Rigid body properties in Motive include a "Smoothing" parameter, which is usually set to 0 and is best left at such value. Smoothing corresponds to a low-pass filtering of the changes of pose of the rigid body, therefore using a nonzero value leads to smoother trajectories and an increased resilience against spurious oscillations in reconstructed pose of the rigid bodies. This in turn can make rigid body tracking more reliable and stable. However, nonzero values for "Smoothing" should be used with great caution as they lead to Motive interpolating actual data coming from the cameras with computed data which may not correspond with the real motion of the tracked rigid body. In any case, only use very low values for "Smoothing" except for special applications.
+\item Carefully monitor tracking performance of the OptiTrack system and repeat its calibration every time it shows signs of degradation. Camera movements (e.g., due to thermal deformation of the supporting structures) can impair reconstructed marker location without catastrophic disruption of system operation.
+\end{enumerate}
+
+\clearpage
+
+\subsubsection{Configuring logging for Task benchmarks, \ro@Home (TBMH)}
+This logger acquires the pose (generated by the OptiTrack system) of a single rigid body: the robot marker set, which is common to all the robots participating to the \ro Competition. For this rigid body, the corresponding 3D pose, 2D pose, and tf frame are acquired, published on ROS topics and logged by the nodes described in Section \ref{ROSnodes}. 
+Configuration of these operations is specified in the \emph{\srcdir tbmh\_mocap.yaml} file. Note that the numeric ID assigned, in Motive, to the rigid body corresponding to the marker set must match the one used in this file.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=tbmh\_mocap.yaml]
+rigid_bodies:
+  '3':
+    pose: robot/pose
+    pose2d: robot/pose2d
+    child_frame_id: robot_at_home
+    parent_frame_id: world
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+The map image file is \emph{\srcdir tbmh\_map.pgm} and its configuration is \emph{\srcdir tbmh\_map.yaml}, both stored in the \emph{\srcdir config} folder.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=tbmh\_map.yaml]
+# Map image file
+image: tbmh_map.pgm
+
+# Resolution of the map, meters / pixel
+resolution: 0.01
+
+# The 2-D pose of the lower-left pixel in the map
+origin: [-5.02, -4.02, 0]
+
+# Negate white/black free/occupied semantics?
+negate: 0
+
+# Occupied/free pixel thresholds
+occupied_thresh: 0.65
+free_thresh: 0.196
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Configuring logging for Task benchmarks, \ro@Work (TBMW)}
+This logger acquires the pose (generated by the OptiTrack system) of a single rigid body: the robot marker set, which is common to all the robots participating to the \ro Competition. For this rigid body, the corresponding 3D pose, 2D pose, and tf frame are acquired, published on ROS topics and logged by the nodes described in Section \ref{ROSnodes}.
+Configuration of these operations is specified in the \emph{\srcdir tbmw\_mocap.yaml} file. Note that the numeric ID assigned, in Motive, to the rigid body corresponding to the marker set must match the one used in this file.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=tbmw\_mocap.yaml]
+rigid_bodies:
+  '5':
+    pose: robot/pose
+    pose2d: robot/pose2d
+    frame_id: robot_at_work
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+The map image file is \emph{\srcdir tbmw\_map.pgm} and its configuration is \emph{\srcdir tbmw\_map.yaml}, both stored in the \emph{\srcdir config} folder.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=tbmw\_map.yaml]
+# Map image file
+image: tbmw_map.pgm
+
+# Resolution of the map, meters / pixel
+resolution: 0.01
+
+# The 2-D pose of the lower-left pixel in the map
+origin: [-3.48, -1.34, 0]
+
+# Negate white/black free/occupied semantics?
+negate: 0
+
+# Occupied/free pixel thresholds
+occupied_thresh: 0.65
+free_thresh: 0.196
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Configuring logging for Functionality benchmarks, \ro@Home and \ro@Work (FBM)}
+This logger acquires the pose (generated by the OptiTrack system) of multiple single rigid bodies: the robot marker set, which is common to all the robots participating to the \ro Competition, and the rigid bodies used for the execution of the Functional Benchmarks. For this rigid bodies, the corresponding 3D pose, 2D pose, and tf frame are acquired, published on ROS topics and logged by the nodes described in Section \ref{ROSnodes}.
+Configuration of these operations is specified in the \emph{\srcdir fbm\_mocap.yaml} file. Note that the numeric IDs assigned, in Motive, to the rigid bodies match the ones used in this file.
+
+The FBM1 configuration is intended to log the Functional Benchmark 1 (Object perception) for both \ro@Home and \ro@Work.
+It acquires two rigid bodies: the table origin marker set (Motive ID: 1) and the reference board marker set (Motive ID: 2).
+For each rigid body, the corresponding 3D pose, 2D pose, and tf frame are published to ROS, as specified in the \emph{fbm1\_mocap.yaml} configuration file.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=fbm1\_mocap.yaml]
+rigid_bodies:
+    '1':
+        pose: origin/pose
+        pose2d: origin/pose2d
+        child_frame_id: origin
+        parent_frame_id: world
+    '2':
+        pose: ref_board/pose
+        pose2d: ref_board/pose2d
+        child_frame_id: ref_board
+        parent_frame_id: world
+    '4':
+	    pose: robot/pose
+	    pose2d: robot/pose2d
+    	child_frame_id: robot_at_home
+	    parent_frame_id: world
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+The map image file is \emph{\srcdir fbm\_map.pgm} and its configuration is \emph{\srcdir fbm\_map.yaml}, both stored in the \emph{\srcdir config} folder.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=fbm\_map.yaml]
+# Map image file
+image: fbm_map.pgm
+
+# Resolution of the map, meters / pixel
+resolution: 0.001
+
+# The 2-D pose of the lower-left pixel in the map
+origin: [-0.1, -0.1, 0]
+
+# Negate white/black free/occupied semantics?
+negate: 0
+
+# Occupied/free pixel thresholds
+occupied_thresh: 0.65
+free_thresh: 0.196
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+
+\subsection{ROS nodes used for logging}
+\label{ROSnodes}
+Ground truth logging operations on the GTlogger PC are performed by ROS nodes. However, in order to avoid interference among the multiple nodes processing pose data streamed by the two OptiTrack systems, these nodes connect with different instances of \textit{roscore}. Precisely, there is one instance of \emph{roscore} running for each logger.
+Each instance binds roscore to a different TCP port, to force separation between the different setups.
+The different environments, with the corresponding roscore instances and TCP ports, are handled by the environment scripts (see Section~\ref{sec:environments}).
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.4\textwidth]{figures/log_tbmh_graph.png}
+\end{figure}
+
+\subsubsection{map\_server}
+\label{sec:map_server}
+
+This node is a ROS \emph{map\_server}\footnote{\url{http://wiki.ros.org/map\_server\#map\_server-1}} node, a C++ node provided by the ROS \emph{map\_server} package.
+It is used to publish a map of the environment, which is described by a bitmap file.
+In particular, we use this node to stream a map of the testbed, used for inspection with RViz and other ROS tools.
+The node is started by the ROS launch file for the particular benchmark.
+The map image name and the corresponding parameters are declared in YAML configuration files stored in the \emph{\srcdir config} folder.
+
+\subsubsection{world\_map}
+\label{sec:world_map}
+
+This node is a ROS \emph{static\_transform\_publisher}\footnote{\url{http://wiki.ros.org/tf\#static\_transform\_publisher}} node, a C++ node provided by the ROS \emph{tf} package.
+It is used to stream a static transformation between two reference frames.
+In particular, we use this node to stream the transformation between the absolute reference frame (world) and the map reference frame (map).
+The node is started by the ROS launch file for the particular benchmark.
+The transformation between the world reference frame and the map reference frame is fixed to $(0, 0, 0, 0, 0, 0)$ (i.e., null translation and rotation are applied), and the map is located in the correct position by using the origin parameter in the map configuration YAML file.
+
+\subsubsection{mocap}
+\label{sec:mocap}
+
+This node is a ROS \emph{mocap\_optitrack}\footnote{\url{http://wiki.ros.org/mocap\_optitrack}} node, a C++ node provided by the ROS \emph{mocap\_optitrack} package.
+It is used to translate motion capture data from an OptiTrack rig to tf transforms, poses and 2D poses.
+The node receives packets that are streamed by the OptiTrack Motive\footnote{\url{http://www.optitrack.com/products/motive/}} software, decodes them and broadcasts the poses of configured rigid bodies as tf transforms, poses, and/or 2D poses.
+The node is started by the ROS launch file for the particular benchmark.
+The rigid body IDs to be tracked are listed in the YAML configuration files, one for each testbed, named \emph{\{tbmh,tbmw,fbm1,fbm3w\}\_mocap.yaml} and stored in the \emph{\srcdir config} folder.
+
+\subsubsection{record}
+\label{sec:record}
+
+This node is a a ROS \emph{record} node, a C++ node provided by the ROS \emph{rosbag}\footnote{\url{http://wiki.ros.org/rosbag}} package.
+It is used to record data from a running ROS system into a set of .bag files, which are splitted every hour (the split period is specified in the launch files).
+The node is started by the ROS launch file for the particular benchmark.
+The list of recored topic depends on the particular benchmark, and it is declared in the ROS launch file.
+Data is logged using NTP time, so that offline association between GT logs and Teams logs is straightforward.
+
+
+%---------------------------------------------------------------
+\subsection{Execution of GT logging}
+
+This section describes how to run the logging. What follows makes use of the \ro \textit{environments}, which are described in section \ref{sec:environments}. Such section also explains how specific \ro scripts are used to create such environments and to switch among them.
+The following instructions describe how to run the loggers and their associated monitors (a script that checks that the logfiles increases in size at the expected rate: see \ref{logmonitor}). Usually, two loggers and two monitors will be running at the same time.
+
+To start each logger, first of all prepare the requisite environment. For instance, for the environment used to log \ro@Home GT data you will have to open a new terminal window and -within it- run command
+\begin{verbatim}
+$ home_env
+\end{verbatim} 
+You can check that the environment is active by observing the system prompt, which now shows an additional string identifying the active environment. In this example, message prompt should now include the string "log@HOME".
+
+Then, in the same terminal window, launch the logging system by calling \emph{roslaunch} and with the relevant \textit{launchfile}, chosen among those provided by ROS package \textit{rockin\_mocap}: for instance
+\begin{verbatim}
+log@HOME $ roslaunch rockin_mocap home_log_mocap.launch
+\end{verbatim} 
+
+Finally, run the monitor. For this, open a second terminal window and, within it, first launch the command to activate the environment, then run the \emph{log\_monitor} script:
+\begin{verbatim}
+$ home_env
+log@HOME $ log_monitor
+\end{verbatim} 
+The log\_monitor script automatically adapts its operation (filenames, ...) to the current environment, so there is only one version for all environments.
+
+\clearpage
+
+%===============================================================
+\section{Tools}
+\label{sec:tools}
+
+\subsection{Environments}
+\label{sec:environments}
+
+\textbf{new version:}
+
+In order to run multiple logs or benchmarks at the same time, each package must be launched on a different roscore by specifying different roscore's IP address and port.
+This is done by exporting the variable \textit{ROS\_MASTER\_URI} before launching the package.
+
+Each environment sets \textit{ROS\_MASTER\_URI}, \textit{ROCKIN\_ENV} (used by log\_monitor, see \ref{logmonitor}) and the terminal prefix to different values.
+The prefix is added to the \textit{bash} shell prompt, so the user can immediately recognize the active environment.
+
+The environments are set by executing the corresponding bash scripts, located in \emph{\toolsdir}.
+The bash script \emph{\toolsdir utils/setup.bash} creates an alias for each environment so that they are avilable everywhere. For instance the home environment's alias is set with the command
+\verb|alias home_env='source ~/workspace/utils/home_env.sh'|
+
+Add the command
+\emph{source \toolsdir utils/setup.bash}
+to the \emph{.bashrc} file, so that the aliases are always available.
+
+The commands made available by \emph{\toolsdir utils/setup.bash} are the following:
+
+
+
+\textbf{ begin old version: }
+
+To perform correctly and adapt their operation to specific circumstances, many components of the \rbs require that a suitable \textit{environment} is set up beforehand. Such environments use environment variables to define working parameters for the \ro system, such as the port used by the \textit{roscore} component of ROS, relevant IP addresses, and so on. In order to ease the setup of such environments and to allow a quick switch from one to the other, a few bash scripts are provided in the \emph{\toolsdir} directory. Beyond defining the required environment variables, each of these scripts adds a specific prefix to the \textit{bash} shell prompt, so the user can immediately recognize the active environment.
+
+Using environments, multiple benchmarking systems can run on the same machine at the same time. Each of them should be run in a separate terminal window, after having set up the required environment using the scripts. The scripts are available through a series of bash commands that become available by sourcing file \emph{\srcdir utils/setup.bash}. This can be done by running command 
+
+\emph{source \srcdir utils/setup.bash}
+ 
+or by adding the setup file to the \emph{.bashrc} file. The commands made available by \emph{\srcdir utils/setup.bash} are the following:
+
+\textbf{ end old version }
+
+
+
+\begin{itemize}
+  \item \verb|home_env|, adds the \verb|log@HOME| prefix to bash and exports the following environmental variables:\\
+    \verb|ROCKIN_ENV="log@HOME"|\\
+    \verb|ROS_MASTER_URI="http://localhost:11311"|
+
+  \item \verb|work_env|, adds the \verb|log@WORK| prefix to bash and exports the following environmental variables:\\
+    \verb|ROCKIN_ENV="log@WORK"|\\
+    \verb|ROS_MASTER_URI="http://localhost:11312"|
+\end{itemize}
+
+Note: in the last competition there was no need to run multiple benchmarks on the same machine, so environments where not used on the BMmanagers.
+
+
+\subsection{Log monitor}
+\label{logmonitor}
+
+To make sure that log files are growing as expected, i.e., that the motion capture systems and the ROS nodes are producing data and running without problems, a bash script monitors the log directory and warns the user if something is not going as expected. This includes, in particular, a check on the rate at which the logfiles increase their size, which is required to be higher than a configurable threshold. Whenever the monitor script detects an anomaly, it prints an error message and emits a sound.
+
+The script is called \emph{log\_monitor} and is available in the \emph{\toolsdir utils/} folder. There is a single script covering all the logging tasks of \ro: the script includes several sections (one for each logging task) and executes only the one among them that matches the current environment (see \ref{sec:environments}). Matching depends on the value of environment variable \textit{ROCKIN\_ENV}, which must be set beforehand.
+
+The behaviour of the script in correspondence to each environment can be configured by changing the relevant section. For instance, in correspondence to environment log@HOME, the log\_monitor script includes the following lines:
+
+\begin{verbatim}
+if os.environ['ROCKIN_ENV'] == 'log@HOME':
+    print colors.INFO + "log@HOME environment" + colors.END
+    env_prefix = "log@HOME "
+    log_prefix = LOG_DIR + "home_log_mocap_"
+    log_size_growth = 50 * 1000
+\end{verbatim}
+
+which define:
+\begin{itemize}
+\item the string to be prepended to the system prompt (as a reminder of the active environment);
+\item the path and name of the logfile;
+\item the expected growth rate for the logfile.
+\end{itemize}
+
+To run the monitor script a new terminal has to be opened, the correct environment has to be activated (see section \ref{sec:environments}) and, finally, command \textit{log\_monitor} must be run:
+
+\begin{verbatim}
+$ home_env
+log@HOME $ log_monitor
+\end{verbatim} 
+
+\clearpage
+
+
+%===============================================================
+\section{Benchmark structure}
+\label{sec:management}
+
+\ro benchmarks are subdivided into two categories:
+\begin{itemize}
+\item benchmarks that do not use the \rbs at all (where performance evaluation is performed by human referees, possibly aided by the Referee Box);
+\item benchmarks that rely on the \rbs to evaluate robot performance and/or to define scoring.
+\end{itemize}
+
+For obvious reasons, Section \ref{sec:management} and Section \ref{sec:benchmarks} are only concerned with the first category. This section, in particular, describes the general structure of a \ro benchmarks. At the moment when this document has been written, benchmarks relying on the \rbs only included Functionality Benchmarks: for this reason, in the following the two categories will sometimes be treated as equivalent. There is no reason, of course, why Task Benchmarks may not rely on the \rbs as well.
+
+For the 2015 \ro Competition, Some of the \ro Functionality Benchmarks depends on the motion capture system to be executed and to compute scores.
+In particular, the Benchmarking System is involved in the execution of the following FBMs:
+
+\begin{itemize}
+  \item FBM1@Home (Object Perception)
+  \item FBM1@Work (Object Perception)
+  \item FBM2@Home (Navigation)
+  \item FBM2@Work (Trajectory Following)
+\end{itemize}
+
+For these benchmarks, the Benchmarking System has to interact with the Referee Box while the benchmark is executed.
+Data exchange with the Robots is handled by the Referee Box, which is in charge of forwarding messages from and to the Benchmarking System (e.g., to send goals and to receive results).
+
+%Right before each benchmark execution, the Referee Box authenticates the client and checks for clock synchronization to guarantee that all collected data shares the very same time base.
+
+%---------------------------------------------------------------
+\subsection{Actors}
+\label{sec:actors}
+
+Specific information about how each benchmark is designed and how it is executed will be provided by Section \ref{sec:benchmarks}. Here we will provide an overview of the execution process of a generic benchmark. As this process is almost the same for all benchmarks, this description is valid for all the benchmarks described by Section \ref{sec:benchmarks}: any difference or specificity, where present, will be highlighted there.
+
+The following of this section describes the process governing the execution of a generic benchmark. This process requires interaction between three actors:
+\begin{enumerate}
+\item the BMmanager PC, also called \textit{Benchmarking Box};
+\item the Referee Box PC, also called \textit{refbox};
+\item the robot.
+\end{enumerate}
+Each of them has a behaviour that is governed by a finite state machine. Changes of state are triggered by events.
+% which can be generated either internally (e.g., when the robot completes a subtask it communicates the results to the Referee Box) or externally (e.g., the Referee Box assigns a task to the robot). IS THIS TRUE??? SECTION Benchmark States only talks of external causes.
+The next part of Section \ref{sec:management} provides a description of these finite state machines, and details about the communication means connecting them. In the following, the term \textbf{benchmark state} will be used to identify the joint states of the above three interacting finite state machines.
+
+%---------------------------------------------------------------
+\subsection{Communication}
+
+To successfully cooperate to perform the benchmark, the actors described in Section \ref{sec:actors} need to communicate. As shown by Figure \ref{fig:whole_system}, these communications pass through suitable networks. This section provide more information about the way they occur. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{dia/rsbb_arch_bb.png}
+  \label{fig:refbox_comms}
+\end{figure}
+
+Figure \ref{fig:refbox_comms} shows the Referee Box, and especially its communication channels with external systems. The whole system shown by figure \ref{fig:refbox_comms} is sometimes called \textbf{\ro Scoring and Benchmarking Box}, or \textbf{RSBB}. The "Benchmarking" element of the RSBB is the BMmanager PC; the "RSBB Core" element is the Referee Box.
+
+The BMmanager PC (Benchmarking Box) and the @Home Referee Box (RSBB Core) communicate through ROS middleware, by publishing and receiving messages on ROS Topics. To do that, they share a single \textit{roscore}, running on the Referee Box.
+As the RSBB relies on protobuf to communicate with the robots, the RSBB developers asked to avoid RPC-style interactions and use only the publish/subscribe messaging paradigm.
+A ROS Proxy module inside the RSBB Core takes care of converting data from ROS to protobuf and vice versa.
+As said, a single instance of \emph{roscore} is executed on the computer running the RSBB Core: all other ROS systems of the RSBB connect to this instance of \emph{roscore}.
+
+The Benchmark State describes the current aggregated state of Referee Box, BMmanager and robot. It is constantly published on the ROS Topic \emph{rockin\_benchmark\_name/state}, by sending \emph{rockin\_scoring/BenchmarkState.msg} messages, at a frequency sufficient to prevent dangerous situations (e.g., the robot not stopping in time).
+
+
+%---------------------------------------------------------------
+\subsection{Benchmark States}
+
+The overall state of a benchmark is descriped by 3 different states:
+\begin{itemize}
+  \item the Benchmarking Box state;
+  \item the Referee Box state;
+  \item the Robot state;
+\end{itemize}
+
+State transitions for a finite state machine are driven by state updates of the other state machines.
+
+\subsubsection{Benchmarking Box States}
+The Benchmarking Box runs a finite state machine with the following states:
+\begin{itemize}
+  \item \textbf{\emph{WAITING CLIENT}}: waiting for a connection from the Referee Box
+  \item \textbf{\emph{READY}}: everything ready to start the benchmark
+  \item \textbf{\emph{WAITING MANUAL OPERATION}}: a manual operation from the referee is needed\\
+    \textbf{payload} contains the requested operation
+  \item \textbf{\emph{COMPLETED MANUAL OPERATION}}: the referee confirmed that the manual operation was completed
+  \item \textbf{\emph{TRANSMITTING GOAL}}: a new goal is beeing transmitted by the Benchmarking Box to the robot\\
+    \textbf{payload}: the description of the goal
+  \item \textbf{\emph{EXECUTING GOAL}}: waiting for the robot to complete the goal
+  \item \textbf{\emph{WAITING RESULT}}: waiting for the robot to transmit the result to the Benchmarking Box
+  \item \textbf{\emph{TRANSMITTING SCORE}}: transmtting the final score\\
+    \textbf{payload}: the computed score
+  \item \textbf{\emph{END}}: the benchmark is concluded
+\end{itemize}
+
+The current state is published on the \emph{fbm\_name/bmbox\_state} topic, while message content is described by \emph{BmBox.msg} (see Listing~8).
+
+\begin{figure}[h!]
+  \begin{center}
+    \includegraphics[height=0.65\textheight]{dot/bmbox_states.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=BmBoxState.msg]
+uint8 START = 0
+uint8 WAITING_CLIENT = 1
+uint8 READY = 2
+uint8 WAITING_MANUAL_OPERATION = 3
+uint8 COMPLETED_MANUAL_OPERATION = 4
+uint8 TRANSMITTING_GOAL = 5
+uint8 EXECUTING_GOAL = 6
+uint8 WAITING_RESULT = 7
+uint8 TRANSMITTING_SCORE = 8
+uint8 END = 9
+
+uint8 state
+string payload
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Referee Box States}
+
+The Referee Box runs a finite states machine with the following states:
+\begin{itemize}
+  \item \textbf{\emph{WAITING CLIENT}}: waiting for a connection from the Robot
+  \item \textbf{\emph{READY}}: everything ready to start the benchmark
+  \item \textbf{\emph{EXECUTING MANUAL OPERATION}}: the manual operation is beeing executed
+  \item \textbf{\emph{EXECUTING GOAL}}: the robot is executing the goal
+  \item \textbf{\emph{RECEIVED SCORE}}: received the final score from the robot
+  \item \textbf{\emph{END}}: benchmark concluded\\
+    \textbf{payload}: if the state transition has been issued by the referee box, payload specifies the reason (timeout / emergency halt)
+\end{itemize}
+
+The current state is published on the \emph{fbm\_name/refbox\_state} topic, while message content is described by \emph{RefBoxState.msg}.
+
+\begin{figure}[t]
+  \begin{center}
+    \includegraphics[height=0.35\textheight]{dot/refbox_states.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=RefBoxState.msg]
+uint8 START = 0
+uint8 WAITING_CLIENT = 1
+uint8 READY = 2
+uint8 EXECUTING_MANUAL_OPERATION = 3
+uint8 EXECUTING_GOAL = 4
+uint8 RECEIVED_SCORE = 5
+uint8 END = 6
+
+uint8 state
+string payload
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Robot States}
+
+The Robot runs a finite states machine with the following states:
+\begin{itemize}
+  \item \textbf{\emph{CONNECTING}}: attempting to connect to the Referee Box
+  \item \textbf{\emph{READY}}: everything ready to start the benchmark
+  \item \textbf{\emph{WAITING GOAL}}: waiting for a goal from the Benchmarking Box
+  \item \textbf{\emph{EXECUTING GOAL}}: executing the goal
+  \item \textbf{\emph{COMPLETED GOAL}}: goal completed; the payload contains the result
+\end{itemize}
+
+The current state is published on the \emph{fbm\_name/client\_state} topic, while message content is described by \emph{ClientState.msg}.
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[height=0.4\textheight]{dot/client_states.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=ClientState.msg]
+uint8 START = 0
+uint8 CONNECTING = 1
+uint8 READY = 2
+uint8 WAITING_GOAL = 3
+uint8 EXECUTING_GOAL = 4
+uint8 COMPLETED_GOAL = 5
+uint8 END = 6
+
+uint8 state
+string payload
+		\end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+
+\subsection{Generic Benchmark Workflow}
+
+What follows is a description of the way a generic benchmark is executed, in terms of states of the three actors (see Section \ref{sec:actors}).
+
+As soon as the benchmark is started (i.e., by launching the corresponding roslaunch file), the Benchmarking Box goes into \emph{WAITING CLIENT} state.
+When a client connects, the Referee Box authenticates it and checks that clocks are synced; if everything is correct, the Referee Box state updates to \emph{READY}.
+When the Referee Box state becomes \emph{READY}, bot the Robot state and the Benchmarking Box state are updated to \emph{READY} too.
+
+The robot then can ask for a goal, and its state is updated to \emph{WAITING GOAL}.
+
+If a manual operation is requested (e.g., the referee must put an object in front of the robot), the Benchmarking Box updates its state to \emph{WAITING MANUAL OPERATION}, sending the required operation as payload of the state message.
+When the manual operation has been concluded, the Referee Box updates its state to \emph{EXECUTING GOAL}, and the Benchmarking Box goes into \emph{COMPLETED MANUAL OPERATION} state.
+
+The Benchmarking Box can now send the goal to the client, going to state \emph{SENDING GOAL} and transmitting the description of the goal as payload of the state message.
+When the Robot receives the goal, it updates its state to \emph{EXECUTING GOAL}, and the Benchmarking Box goes into state \emph{WAITING FOR RESULT} as a consequence.
+
+When the robot completed the goal, it updates its state to \emph{TRANSMITTING RESULT}, with the result as payload of the state message; the Benchmarking Box saves the received results and, if there are more goals, waits for the robot requesting a new goal (i.e., the state is updated to \emph{READY}), otherwise, the state is updated to \emph{TRANSMITTING SCORE}, with the final score as payload, and the benchmark is concluded.
+
+At any time, the state can be updated to \emph{END} by the Referee Box, with payload "timeout" if it runs out of time, or payload "halt" if the benchmark was halted by a human request.
+The RSBB Core runs a stop timer, and provides a way to halt the benchmark by a human.
+
+\clearpage
+
+
+%===============================================================
+\section{Benchmarks}
+\label{sec:benchmarks}
+
+As explained in Section \ref{sec:overview}, the \rbs has two different tasks:
+\begin{itemize}
+\item logging Ground Truth motion capture data;
+\item managing some of the \ro benchmarks (which includes logging the associated data).
+\end{itemize}
+
+The second activity is performed independently from the first, on a dedicated PC (\textit{BMmanager} in Figure \ref{fig:whole_system}). This section is dedicated to describe how the benchmarking activities of BMmanager are performed. Please note that \textbf{all the filesystem paths in this section refer to the BMmanager machine.}
+
+
+------------------------------------------------------
+
+TODO: REVIEW THE REST OF THE DOCUMENT
+
+------------------------------------------------------
+
+
+%---------------------------------------------------------------
+\subsection{Functional Benchmark 1 for \ro@Home and \ro@Work: object recognition}
+\label{fbm1h+w}
+In this benchmark, the Robot is required to identify the class, the instance, and the pose of a set of objects.
+The benchmark works as follows (see the Rule Book for further details):
+
+\begin{enumerate}
+  \item an object of unknown class and unknown instance is placed on a table in front of the robot
+  \item the robot must determine the object’s class, its instance within that class as well as the 2D pose of the object w.r.t. the reference system specified on the table
+  \item the preceding steps are repeated until time runs out or 10 objects have been processed
+\end{enumerate}
+
+For each presented object, the robot must produce the result consisting of:
+\begin{itemize}
+  \item object class name [string]
+  \item object instance name [string]
+  \item object pose (x [m], y [m], theta [rad])
+\end{itemize}
+
+The motion capture system is used to acquire the actual pose of the object.
+For this purpose, two marker sets are defined:
+
+\begin{itemize}
+  \item one fixed to the table, which specifies the origin
+  \item one fixed to a reference board, which has a slot to accomodate the objects
+\end{itemize}
+
+In this way, given the transformations between each object and the reference board marker set, we can acquire the pose of the object with respect to the origin.
+
+\subsubsection{ROS nodes}
+
+\includegraphics[width=\textwidth]{figures/fbm1h_graph.png}
+
+\subsubsection{map\_server}
+
+ROS \emph{map\_server} node, as described in Section~\ref{sec:map_server}
+
+\subsubsection{world\_map}
+
+ROS \emph{static\_transform\_publisher} node, as described in Section~\ref{sec:world_map}
+ 
+\subsubsection{mocap}
+
+ROS \emph{mocap\_optitrack} node, as described in Section~\ref{sec:mocap}
+
+\subsubsection{record}
+
+ROS \emph{record} node, as described in Section~\ref{sec:record}
+
+\subsubsection{benchmark}
+
+This is the ROS node in charge of running the benchmark.
+It is developed in Python, and takes care of all the needed tasks:
+
+\begin{itemize}
+  \item runs the benchmark state machine
+  \item loads the object list, with the corresponding transformation from the reference board marker set to the object frame, from a YAML configuration file
+  \item acquires the position of the reference board from the motion capture system
+  \item computes the actual position of the object reference frame
+  \item computes the score
+\end{itemize}
+
+The only difference between the \ro@Home and the \ro@Work FBM1 is that in @Home the benchmark node is in charge of picking a random object from the object list, while in @Work it is the Referee Box that selects the object.
+
+The script that runs this benchmark is named \emph{fbm1h} (for \ro@Home) or \emph{fbm1w} (for \ro@Work), and the source code is stored in the \emph{rockin\_scoring/scripts} folder.
+
+
+\subsubsection{refbox\_test}
+
+This node simulates the Referee Box.
+It is developed in Python, and implements the Referee Box state machine to test the interaction with the rest of the system.
+
+The script that simulates the Referee Box is named \emph{fbm1h\_refbox\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
+
+\subsubsection{client\_test}
+
+This node simulates the Robot.
+It is developed in Python, and implements the Robot state machine to test the interaction with the rest of the system.
+
+The script that simulates a Robot is named \emph{fbm1h\_client\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Object list}
+
+The object list is a YAML file representing a Python list of all the objects.
+The YAML files are named \emph{fbm1h.yaml} (for @Home objects) and \emph{fbm1w.yaml} (for @Work objects), and they are stored in the \emph{rocking\_benchmarking/config} folder.
+The \emph{fbm1h-vanilla.yaml} and \emph{fbm1w-vanilla.yaml} YAML files contain the list of objects without the corresponding translations and rotations, and may be used to acquire the transoformations as described in Section~\ref{sec:acquire_items}.
+
+For each object, 5 parameters are specified:
+
+\begin{itemize}
+  \item the ID, a unique key starting from 1
+  \item the class
+  \item the instance
+  \item the translation with respect to the reference board frame (expressed in meters)
+  \item the rotation with respect to the reference board frame (expressed in radiants)
+\end{itemize}
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=fbm1h.yaml]
+items:
+- class: a
+  id: 1
+  instance: a1
+  rot: [-0.00751, 0.00246, -0.00631, 0.99994]
+  trans: [0.01410, -0.25499, -0.01289]
+- class: a
+  id: 2
+  instance: a2
+  rot: [-0.00642, 0.00193, -0.00176, 0.99997]
+  trans: [0.01642, -0.25131, -0.01429]
+    \end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\subsubsection{Motion capture configuration}
+
+The motion capture system has to be carefully configured and calibrated for the correct execution of the benchmark.
+
+First of all, two marker set have to be defined in the motive OptiTrack system:
+\begin{itemize}
+  \item the \emph{origin} marker set, composed of the 4 markers fixed to the table (Motive ID 1)
+  \item the \emph{ref\_board} marker set, composed of the 5 markers fixed to the reference board (Motive ID 2)
+\end{itemize}
+
+Then, to precisely align the origin frame with the AR codes attached to the table, proceed as follows:
+\begin{enumerate}
+  \item align the Optirack ground plane calibration tool with the AR codes (a replica of the original tool with correct offsets has been made, and should be taped to the back of the table)
+  \item in Motive (calibration view), calibrate the ground plane
+  \item in Motive (creation view), select the origin marker set and add an offset to its coordinates so that they coincide with the origin (0, 0, 0, with angle 0)
+  \item after the calibration, the ground plane is not required to stay on the table any more (i.e., it can be removed, or placed in any other place covered by the Motion Capture System if needed, without compromising the benchmark execution)
+  
+\end{enumerate}
+
+\subsubsection{Acquisition of new objects}
+\label{sec:acquire_items}
+
+To acquire the object pose, the transformation from the reference board marker set to the frame of the particular object has to be known.
+Indeed, the objects may have different frame origins and orientations, depending on their shape.
+For this reason, when adding new object to the list, they must be carefully acquired with the motion capture system to find the exact transformation.
+
+The reccomended setup is to place a camera on the top of the table, pointing at the origin, aligned with the Z axis.
+Then, display the video stream placing an overlay image showing the 3 axes (e.g., it can be done with VLC~\footnote{\url{https://www.vlchelp.com/add-logo-watermarks-over-videos-vlc/}}), carefully aligning them to the origin.
+In this way, objects can be precisely placed in the origin, and at the same time images with the superimposed axes can be saved as a reference.
+A reference frame image is available in the \emph{doc/items} folder.
+Images of the objects used at the \ro 2014 Competition are stored in the \emph{doc/items/roah} and \emph{doc/items/roaw} folders.
+
+Object acquisition is automated by a ROS script, which cycles the object list and acquires the transoformation for each object.
+The user is only required to place the objects in the desired position and press ENTER.
+The result is a YAML configuration file ready to be used for the FBM1; the file is saved in the \emph{/home/rockin} folder, and the user is required to overwrite the benchmark config file to use the new one.
+
+The object acquisition script can be launched by calling roslaunch:
+\begin{verbatim}
+$ roslaunch rockin_scoring fbm1h_acquire_items.launch
+\end{verbatim} 
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.70\textwidth]{figures/fbm1_table.jpg}
+    \hspace{0.5cm}
+    \includegraphics[width=0.24\textwidth]{items/roah/0_table_frame.jpg}
+  \end{center}
+  \caption{rockin FBM1 table and reference frame}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.24\textwidth]{items/roah/1_black_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/2_white_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/3_coffee_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/4_black_jug.jpg}\\
+    \includegraphics[width=0.24\textwidth]{items/roah/5_fork.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/6_knife.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/7_yellow_box.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/8_pink_box.jpg}\\
+    \includegraphics[width=0.24\textwidth]{items/roah/9_gold_frame.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/10_black_frame.jpg}
+  \end{center}
+  \caption{\ro@Home FBM1 objects}
+\end{figure}
+
+
+%---------------------------------------------------------------
+\subsubsection{Execution}
+
+\subsubsection{Using the Referee Box}
+
+To start the FBM1 using the Referee Box, first of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_env
+\end{verbatim} 
+
+Then, launch the benchmark by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME $ roslaunch rockin_scoring fbm1h.launch
+\end{verbatim}
+
+The benchmark execution is managed by the refbox: whenever a client is ready, the benchmark node requests a manual operation (i.e., place the given object on the table), sends the goal, and waits for the result.
+At the end of the runs, the final score is computed and sent to the referee box.
+
+\subsubsection{Manual execution}
+
+To start the FBM1 using the Referee Box, first of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_manual_env
+\end{verbatim} 
+
+Then, launch the benchmark by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_manual.launch
+\end{verbatim} 
+
+A terminal opens, requesting a manual operation (i.e., place the given object on the table).
+The referee places the object on the table, and the manual operation is confirmed by pressing ENTER on the terminal.
+When the robot has recognized the object, press ENTER again to conclude the run.
+The procedure is repeated for the number of runs, and a report is printed at the end of the benchmark.
+
+\subsubsection{Testing}
+
+A set of python scripts simulating the referee box and the robot can be used to test the FBM1 workflow.
+To run a test, firt of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_manual_env
+\end{verbatim} 
+
+Then, launch the test by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_test.launch
+\end{verbatim}
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Logging}
+
+The benchmark launch files log each execution by launching a rosbag node.
+The logged topics are:
+
+\begin{verbatim}
+/fbm1h/bmbox_state
+/fbm1h/client_state
+/fbm1h/refbox_state
+/fbm1h/map
+/fbm1h/map_metadata
+/fbm1h/origin/pose
+/fbm1h/origin/pose2d
+/fbm1h/ref_board/pose
+/fbm1h/ref_board/pose2d
+/fbm1h/info
+/tf
+/rosout
+\end{verbatim}
+
+Resulting logs are stored in the \emph{\logdir} folder.
+
+\clearpage
+
+
+%===============================================================
+\subsection{Functional Benchmark 2 for \ro@Home: navigation}
+\label{sec:fbm2h}
+In this benchmark, the Robot is required to identify the class, the instance, and the pose of a set of objects.
+The benchmark works as follows (see the Rule Book for further details):
+
+\begin{enumerate}
+  \item an object of unknown class and unknown instance is placed on a table in front of the robot
+  \item the robot must determine the object’s class, its instance within that class as well as the 2D pose of the object w.r.t. the reference system specified on the table
+  \item the preceding steps are repeated until time runs out or 10 objects have been processed
+\end{enumerate}
+
+For each presented object, the robot must produce the result consisting of:
+\begin{itemize}
+  \item object class name [string]
+  \item object instance name [string]
+  \item object pose (x [m], y [m], theta [rad])
+\end{itemize}
+
+The motion capture system is used to acquire the actual pose of the object.
+For this purpose, two marker sets are defined:
+
+\begin{itemize}
+  \item one fixed to the table, which specifies the origin
+  \item one fixed to a reference board, which has a slot to accomodate the objects
+\end{itemize}
+
+In this way, given the transformations between each object and the reference board marker set, we can acquire the pose of the object with respect to the origin.
+
+\subsubsection{ROS nodes}
+
+\includegraphics[width=\textwidth]{figures/fbm1h_graph.png}
+
+\subsubsection{map\_server}
+
+ROS \emph{map\_server} node, as described in Section~\ref{sec:map_server}
+
+\subsubsection{world\_map}
+
+ROS \emph{static\_transform\_publisher} node, as described in Section~\ref{sec:world_map}
+ 
+\subsubsection{mocap}
+
+ROS \emph{mocap\_optitrack} node, as described in Section~\ref{sec:mocap}
+
+\subsubsection{record}
+
+ROS \emph{record} node, as described in Section~\ref{sec:record}
+
+\subsubsection{benchmark}
+
+This is the ROS node in charge of running the benchmark.
+It is developed in Python, and takes care of all the needed tasks:
+
+\begin{itemize}
+  \item runs the benchmark state machine
+  \item loads the object list, with the corresponding transformation from the reference board marker set to the object frame, from a YAML configuration file
+  \item acquires the position of the reference board from the motion capture system
+  \item computes the actual position of the object reference frame
+  \item computes the score
+\end{itemize}
+
+The only difference between the \ro@Home and the \ro@Work FBM1 is that in @Home the benchmark node is in charge of picking a random object from the object list, while in @Work it is the Referee Box that selects the object.
+
+The script that runs this benchmark is named \emph{fbm1h} (for \ro@Home) or \emph{fbm1w} (for \ro@Work), and the source code is stored in the \emph{rockin\_scoring/scripts} folder.
+
+
+\subsubsection{refbox\_test}
+
+This node simulates the Referee Box.
+It is developed in Python, and implements the Referee Box state machine to test the interaction with the rest of the system.
+
+The script that simulates the Referee Box is named \emph{fbm1h\_refbox\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
+
+\subsubsection{client\_test}
+
+This node simulates the Robot.
+It is developed in Python, and implements the Robot state machine to test the interaction with the rest of the system.
+
+The script that simulates a Robot is named \emph{fbm1h\_client\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Object list}
+
+The object list is a YAML file representing a Python list of all the objects.
+The YAML files are named \emph{fbm1h.yaml} (for @Home objects) and \emph{fbm1w.yaml} (for @Work objects), and they are stored in the \emph{rocking\_benchmarking/config} folder.
+The \emph{fbm1h-vanilla.yaml} and \emph{fbm1w-vanilla.yaml} YAML files contain the list of objects without the corresponding translations and rotations, and may be used to acquire the transoformations as described in Section~\ref{sec:acquire_items}.
+
+For each object, 5 parameters are specified:
+
+\begin{itemize}
+  \item the ID, a unique key starting from 1
+  \item the class
+  \item the instance
+  \item the translation with respect to the reference board frame (expressed in meters)
+  \item the rotation with respect to the reference board frame (expressed in radiants)
+\end{itemize}
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=fbm1h.yaml]
+items:
+- class: a
+  id: 1
+  instance: a1
+  rot: [-0.00751, 0.00246, -0.00631, 0.99994]
+  trans: [0.01410, -0.25499, -0.01289]
+- class: a
+  id: 2
+  instance: a2
+  rot: [-0.00642, 0.00193, -0.00176, 0.99997]
+  trans: [0.01642, -0.25131, -0.01429]
+    \end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\subsubsection{Motion capture configuration}
+
+The motion capture system has to be carefully configured and calibrated for the correct execution of the benchmark.
+
+First of all, two marker set have to be defined in the motive OptiTrack system:
+\begin{itemize}
+  \item the \emph{origin} marker set, composed of the 4 markers fixed to the table (Motive ID 1)
+  \item the \emph{ref\_board} marker set, composed of the 5 markers fixed to the reference board (Motive ID 2)
+\end{itemize}
+
+Then, to precisely align the origin frame with the AR codes attached to the table, proceed as follows:
+\begin{enumerate}
+  \item align the Optirack ground plane calibration tool with the AR codes (a replica of the original tool with correct offsets has been made, and should be taped to the back of the table)
+  \item in Motive (calibration view), calibrate the ground plane
+  \item in Motive (creation view), select the origin marker set and add an offset to its coordinates so that they coincide with the origin (0, 0, 0, with angle 0)
+  \item after the calibration, the ground plane is not required to stay on the table any more (i.e., it can be removed, or placed in any other place covered by the Motion Capture System if needed, without compromising the benchmark execution)
+  
+\end{enumerate}
+
+\subsubsection{Acquisition of new objects}
+\label{sec:acquire_items}
+
+To acquire the object pose, the transformation from the reference board marker set to the frame of the particular object has to be known.
+Indeed, the objects may have different frame origins and orientations, depending on their shape.
+For this reason, when adding new object to the list, they must be carefully acquired with the motion capture system to find the exact transformation.
+
+The reccomended setup is to place a camera on the top of the table, pointing at the origin, aligned with the Z axis.
+Then, display the video stream placing an overlay image showing the 3 axes (e.g., it can be done with VLC~\footnote{\url{https://www.vlchelp.com/add-logo-watermarks-over-videos-vlc/}}), carefully aligning them to the origin.
+In this way, objects can be precisely placed in the origin, and at the same time images with the superimposed axes can be saved as a reference.
+A reference frame image is available in the \emph{doc/items} folder.
+Images of the objects used at the \ro 2014 Competition are stored in the \emph{doc/items/roah} and \emph{doc/items/roaw} folders.
+
+Object acquisition is automated by a ROS script, which cycles the object list and acquires the transoformation for each object.
+The user is only required to place the objects in the desired position and press ENTER.
+The result is a YAML configuration file ready to be used for the FBM1; the file is saved in the \emph{/home/rockin} folder, and the user is required to overwrite the benchmark config file to use the new one.
+
+The object acquisition script can be launched by calling roslaunch:
+\begin{verbatim}
+$ roslaunch rockin_scoring fbm1h_acquire_items.launch
+\end{verbatim} 
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.70\textwidth]{figures/fbm1_table.jpg}
+    \hspace{0.5cm}
+    \includegraphics[width=0.24\textwidth]{items/roah/0_table_frame.jpg}
+  \end{center}
+  \caption{rockin FBM1 table and reference frame}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.24\textwidth]{items/roah/1_black_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/2_white_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/3_coffee_mug.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/4_black_jug.jpg}\\
+    \includegraphics[width=0.24\textwidth]{items/roah/5_fork.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/6_knife.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/7_yellow_box.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/8_pink_box.jpg}\\
+    \includegraphics[width=0.24\textwidth]{items/roah/9_gold_frame.jpg}
+    \includegraphics[width=0.24\textwidth]{items/roah/10_black_frame.jpg}
+  \end{center}
+  \caption{\ro@Home FBM1 objects}
+\end{figure}
+
+
+%---------------------------------------------------------------
+\subsubsection{Execution}
+
+\subsubsection{Using the Referee Box}
+
+To start the FBM1 using the Referee Box, first of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_env
+\end{verbatim} 
+
+Then, launch the benchmark by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME $ roslaunch rockin_scoring fbm1h.launch
+\end{verbatim}
+
+The benchmark execution is managed by the refbox: whenever a client is ready, the benchmark node requests a manual operation (i.e., place the given object on the table), sends the goal, and waits for the result.
+At the end of the runs, the final score is computed and sent to the referee box.
+
+\subsubsection{Manual execution}
+
+To start the FBM1 using the Referee Box, first of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_manual_env
+\end{verbatim} 
+
+Then, launch the benchmark by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_manual.launch
+\end{verbatim} 
+
+A terminal opens, requesting a manual operation (i.e., place the given object on the table).
+The referee places the object on the table, and the manual operation is confirmed by pressing ENTER on the terminal.
+When the robot has recognized the object, press ENTER again to conclude the run.
+The procedure is repeated for the number of runs, and a report is printed at the end of the benchmark.
+
+\subsubsection{Testing}
+
+A set of python scripts simulating the referee box and the robot can be used to test the FBM1 workflow.
+To run a test, firt of all switch to the correct environment:
+\begin{verbatim}
+$ fbmh_manual_env
+\end{verbatim} 
+
+Then, launch the test by calling \emph{roslaunch}:
+\begin{verbatim}
+FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_test.launch
+\end{verbatim}
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Logging}
+
+The benchmark launch files log each execution by launching a rosbag node.
+The logged topics are:
+
+\begin{verbatim}
+/fbm1h/bmbox_state
+/fbm1h/client_state
+/fbm1h/refbox_state
+/fbm1h/map
+/fbm1h/map_metadata
+/fbm1h/origin/pose
+/fbm1h/origin/pose2d
+/fbm1h/ref_board/pose
+/fbm1h/ref_board/pose2d
+/fbm1h/info
+/tf
+/rosout
+\end{verbatim}
+
+Resulting logs are stored in the \emph{\logdir} folder.
+
+\clearpage
+
+%===============================================================
+\subsection{Functional Benchmark 3 for \ro@Work: trajectory following}
+\label{sec:fbm3w}
+TODO
+
+\end{document}
