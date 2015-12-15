@@ -1104,261 +1104,221 @@ Resulting logs are stored in the \emph{\logdir} folder.
 %===============================================================
 \subsection{Functional Benchmark 2 for \ro@Home: navigation}
 \label{sec:fbm2h}
-In this benchmark, the Robot is required to identify the class, the instance, and the pose of a set of objects.
-The benchmark works as follows (see the Rule Book for further details):
+This functionality benchmark aims at assessing the capabilities of a robot to correctly and autonomously navigate in a typical apartment, containing furniture and objects spread through the apartment’s rooms. The benchmark will use the RoCKIn@Home testbed. From a predefined starting position, the robot will receive a list of waypoints that it must visit to reach a goal position.
+For a complete description of the rules see d2.1.3: 5.2
 
-\begin{enumerate}
-  \item an object of unknown class and unknown instance is placed on a table in front of the robot
-  \item the robot must determine the object’s class, its instance within that class as well as the 2D pose of the object w.r.t. the reference system specified on the table
-  \item the preceding steps are repeated until time runs out or 10 objects have been processed
-\end{enumerate}
+The motion capture system is used to acquire the actual pose of the robot and evaluate the position and orientation accuracy.
 
-For each presented object, the robot must produce the result consisting of:
-\begin{itemize}
-  \item object class name [string]
-  \item object instance name [string]
-  \item object pose (x [m], y [m], theta [rad])
-\end{itemize}
-
-The motion capture system is used to acquire the actual pose of the object.
-For this purpose, two marker sets are defined:
-
-\begin{itemize}
-  \item one fixed to the table, which specifies the origin
-  \item one fixed to a reference board, which has a slot to accomodate the objects
-\end{itemize}
-
-In this way, given the transformations between each object and the reference board marker set, we can acquire the pose of the object with respect to the origin.
+For this purpose, a markerset is fixed on the robot.
 
 \subsubsection{ROS nodes}
 
-\includegraphics[width=\textwidth]{figures/fbm1h_graph.png}
+When the benchmark is launched, these nodes are run: bmbox (fbm2h), world_map, map_server, mocap, record.
 
-\subsubsection{map\_server}
+\includegraphics[width=\textwidth]{figures/fbm2h_graph.png TODO}
 
-ROS \emph{map\_server} node, as described in Section~\ref{sec:map_server}
+Of special interest are the following:
 
-\subsubsection{world\_map}
-
-ROS \emph{static\_transform\_publisher} node, as described in Section~\ref{sec:world_map}
- 
-\subsubsection{mocap}
-
-ROS \emph{mocap\_optitrack} node, as described in Section~\ref{sec:mocap}
-
-\subsubsection{record}
-
-ROS \emph{record} node, as described in Section~\ref{sec:record}
-
-\subsubsection{benchmark}
+\subsubsubsection{fbm2h}
 
 This is the ROS node in charge of running the benchmark.
-It is developed in Python, and takes care of all the needed tasks:
+The source is stored in rockin_scoring/scripts/fbm2h.
 
-\begin{itemize}
-  \item runs the benchmark state machine
-  \item loads the object list, with the corresponding transformation from the reference board marker set to the object frame, from a YAML configuration file
-  \item acquires the position of the reference board from the motion capture system
-  \item computes the actual position of the object reference frame
-  \item computes the score
-\end{itemize}
+The i-th segment is defined as: the robot's path from waypoint i-1 to waypoint i; segment 0: robot's path from starting pose to waypoint 0.
 
-The only difference between the \ro@Home and the \ro@Work FBM1 is that in @Home the benchmark node is in charge of picking a random object from the object list, while in @Work it is the Referee Box that selects the object.
+The script works as follows:
 
-The script that runs this benchmark is named \emph{fbm1h} (for \ro@Home) or \emph{fbm1w} (for \ro@Work), and the source code is stored in the \emph{rockin\_scoring/scripts} folder.
+· Start up phase:
+In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING_CLIENT.
 
+When the benchmark is launched, the robot is in the starting position.
+The transform from markerset to robot odometric center is loaded as parameter, for the appropriate team (specifyed as argument, see Execution TODO: link).
+This is used to evaluate the robot pose when it reaches a waypoint.
+The benchmark's parameters are loaded as well (see Goal data format TODO: link).
 
-\subsubsection{refbox\_test}
+· Execution on each segment:
+On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT.
 
-This node simulates the Referee Box.
-It is developed in Python, and implements the Referee Box state machine to test the interaction with the rest of the system.
+On the first segment (from starting pose to waypoint 0) BmBoxState.TRANSMITTING_GOAL's payload is the goal data, on every other segment (segment i: from waypoint i-1 to waypoint i) the payload is empty.
 
-The script that simulates the Referee Box is named \emph{fbm1h\_refbox\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
+When the client (that is actually the refbox) receives the goal, the FSM transitions to ClientState.EXECUTING_GOAL and then to ClientState.WAITING_RESULT.
+Once the robot reaches the waypoint, the refbox performs the transition from ClientState.WAITING_RESULT to ClientState.READY (the payload of ClientState.WAITING_RESULT is empty).
 
-\subsubsection{client\_test}
+The markerset pose is acquired from the mocap system and the robot pose computed from the markerset to robot transform.
+The accuracy of the robot pose wrt the waypoint pose is computed (see d2.1.3: 5.2.7).
+The segment time is evaluated.
 
-This node simulates the Robot.
-It is developed in Python, and implements the Robot state machine to test the interaction with the rest of the system.
-
-The script that simulates a Robot is named \emph{fbm1h\_client\_test} and its source code is stored in the \emph{rocking\_benchmarking/scripts} folder.
-
-\clearpage
-
-%---------------------------------------------------------------
-\subsubsection{Object list}
-
-The object list is a YAML file representing a Python list of all the objects.
-The YAML files are named \emph{fbm1h.yaml} (for @Home objects) and \emph{fbm1w.yaml} (for @Work objects), and they are stored in the \emph{rocking\_benchmarking/config} folder.
-The \emph{fbm1h-vanilla.yaml} and \emph{fbm1w-vanilla.yaml} YAML files contain the list of objects without the corresponding translations and rotations, and may be used to acquire the transoformations as described in Section~\ref{sec:acquire_items}.
-
-For each object, 5 parameters are specified:
-
-\begin{itemize}
-  \item the ID, a unique key starting from 1
-  \item the class
-  \item the instance
-  \item the translation with respect to the reference board frame (expressed in meters)
-  \item the rotation with respect to the reference board frame (expressed in radiants)
-\end{itemize}
-
-\begin{figure}[h!]
-	\noindent
-	\begin{minipage}[t!]{\linewidth}
-		\begin{lstlisting}[caption=fbm1h.yaml]
-items:
-- class: a
-  id: 1
-  instance: a1
-  rot: [-0.00751, 0.00246, -0.00631, 0.99994]
-  trans: [0.01410, -0.25499, -0.01289]
-- class: a
-  id: 2
-  instance: a2
-  rot: [-0.00642, 0.00193, -0.00176, 0.99997]
-  trans: [0.01642, -0.25131, -0.01429]
-    \end{lstlisting}
-	\end{minipage}
-\end{figure}
-
-\subsubsection{Motion capture configuration}
-
-The motion capture system has to be carefully configured and calibrated for the correct execution of the benchmark.
-
-First of all, two marker set have to be defined in the motive OptiTrack system:
-\begin{itemize}
-  \item the \emph{origin} marker set, composed of the 4 markers fixed to the table (Motive ID 1)
-  \item the \emph{ref\_board} marker set, composed of the 5 markers fixed to the reference board (Motive ID 2)
-\end{itemize}
-
-Then, to precisely align the origin frame with the AR codes attached to the table, proceed as follows:
-\begin{enumerate}
-  \item align the Optirack ground plane calibration tool with the AR codes (a replica of the original tool with correct offsets has been made, and should be taped to the back of the table)
-  \item in Motive (calibration view), calibrate the ground plane
-  \item in Motive (creation view), select the origin marker set and add an offset to its coordinates so that they coincide with the origin (0, 0, 0, with angle 0)
-  \item after the calibration, the ground plane is not required to stay on the table any more (i.e., it can be removed, or placed in any other place covered by the Motion Capture System if needed, without compromising the benchmark execution)
-  
-\end{enumerate}
-
-\subsubsection{Acquisition of new objects}
-\label{sec:acquire_items}
-
-To acquire the object pose, the transformation from the reference board marker set to the frame of the particular object has to be known.
-Indeed, the objects may have different frame origins and orientations, depending on their shape.
-For this reason, when adding new object to the list, they must be carefully acquired with the motion capture system to find the exact transformation.
-
-The reccomended setup is to place a camera on the top of the table, pointing at the origin, aligned with the Z axis.
-Then, display the video stream placing an overlay image showing the 3 axes (e.g., it can be done with VLC~\footnote{\url{https://www.vlchelp.com/add-logo-watermarks-over-videos-vlc/}}), carefully aligning them to the origin.
-In this way, objects can be precisely placed in the origin, and at the same time images with the superimposed axes can be saved as a reference.
-A reference frame image is available in the \emph{doc/items} folder.
-Images of the objects used at the \ro 2014 Competition are stored in the \emph{doc/items/roah} and \emph{doc/items/roaw} folders.
-
-Object acquisition is automated by a ROS script, which cycles the object list and acquires the transoformation for each object.
-The user is only required to place the objects in the desired position and press ENTER.
-The result is a YAML configuration file ready to be used for the FBM1; the file is saved in the \emph{/home/rockin} folder, and the user is required to overwrite the benchmark config file to use the new one.
-
-The object acquisition script can be launched by calling roslaunch:
-\begin{verbatim}
-$ roslaunch rockin_scoring fbm1h_acquire_items.launch
-\end{verbatim} 
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=0.70\textwidth]{figures/fbm1_table.jpg}
-    \hspace{0.5cm}
-    \includegraphics[width=0.24\textwidth]{items/roah/0_table_frame.jpg}
-  \end{center}
-  \caption{rockin FBM1 table and reference frame}
-\end{figure}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=0.24\textwidth]{items/roah/1_black_mug.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/2_white_mug.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/3_coffee_mug.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/4_black_jug.jpg}\\
-    \includegraphics[width=0.24\textwidth]{items/roah/5_fork.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/6_knife.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/7_yellow_box.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/8_pink_box.jpg}\\
-    \includegraphics[width=0.24\textwidth]{items/roah/9_gold_frame.jpg}
-    \includegraphics[width=0.24\textwidth]{items/roah/10_black_frame.jpg}
-  \end{center}
-  \caption{\ro@Home FBM1 objects}
-\end{figure}
+· End of benchmark:
+In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_SCORE, BmBoxState.END.
+The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see Score data format TODO: link)
 
 
-%---------------------------------------------------------------
-\subsubsection{Execution}
+\subsubsubsection{record}
 
-\subsubsection{Using the Referee Box}
+When the benchmark is launched the record node will log the following topics:
 
-To start the FBM1 using the Referee Box, first of all switch to the correct environment:
-\begin{verbatim}
-$ fbmh_env
-\end{verbatim} 
-
-Then, launch the benchmark by calling \emph{roslaunch}:
-\begin{verbatim}
-FBM1@HOME $ roslaunch rockin_scoring fbm1h.launch
-\end{verbatim}
-
-The benchmark execution is managed by the refbox: whenever a client is ready, the benchmark node requests a manual operation (i.e., place the given object on the table), sends the goal, and waits for the result.
-At the end of the runs, the final score is computed and sent to the referee box.
-
-\subsubsection{Manual execution}
-
-To start the FBM1 using the Referee Box, first of all switch to the correct environment:
-\begin{verbatim}
-$ fbmh_manual_env
-\end{verbatim} 
-
-Then, launch the benchmark by calling \emph{roslaunch}:
-\begin{verbatim}
-FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_manual.launch
-\end{verbatim} 
-
-A terminal opens, requesting a manual operation (i.e., place the given object on the table).
-The referee places the object on the table, and the manual operation is confirmed by pressing ENTER on the terminal.
-When the robot has recognized the object, press ENTER again to conclude the run.
-The procedure is repeated for the number of runs, and a report is printed at the end of the benchmark.
-
-\subsubsection{Testing}
-
-A set of python scripts simulating the referee box and the robot can be used to test the FBM1 workflow.
-To run a test, firt of all switch to the correct environment:
-\begin{verbatim}
-$ fbmh_manual_env
-\end{verbatim} 
-
-Then, launch the test by calling \emph{roslaunch}:
-\begin{verbatim}
-FBM1@HOME (MANUAL) $ roslaunch rockin_scoring fbm1h_test.launch
-\end{verbatim}
-
-\clearpage
-
-%---------------------------------------------------------------
-\subsubsection{Logging}
-
-The benchmark launch files log each execution by launching a rosbag node.
-The logged topics are:
-
-\begin{verbatim}
-/fbm1h/bmbox_state
-/fbm1h/client_state
-/fbm1h/refbox_state
-/fbm1h/map
-/fbm1h/map_metadata
-/fbm1h/origin/pose
-/fbm1h/origin/pose2d
-/fbm1h/ref_board/pose
-/fbm1h/ref_board/pose2d
-/fbm1h/info
+/fbm2h/bmbox_state
+/fbm2h/client_state
+/fbm2h/refbox_state
+/fbm2h/map
+/fbm2h/map_metadata
+/fbm2h/robot_at_home/pose
+/fbm2h/robot_at_home/pose2d
+/fbm2h/info
 /tf
 /rosout
-\end{verbatim}
 
-Resulting logs are stored in the \emph{\logdir} folder.
+Resulting logs are stored in ~/logs/.
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Configuration and data formats}
+
+The benchmark's parameters consist in the goal that is sent to the RefBox and the markerset-robot transforms.
+The first is found in rockin_scoring/config/fbm2h.yaml and rockin_scoring/config/fbm2h_test.yaml, the transforms are in the directory rocking_scoring/transforms/.
+
+
+\subsubsubsection{Goal data format}
+
+This is a summary of the goal's format. The goal is sent to the refbox as a string in yaml format.
+The goal corresponds to the FBM2H's configuration, found in rockin_scoring/config/fbm2h.yaml, although num_waypoints is added before it is sent.
+
+goal:
+  waypoints: # list of Pose2D poses
+  - [-2.12524914742, -1.60717535019, 1.55841375286]
+  - [2.32184529305, -3.40717220306, 2.37683575141]
+  - [1.73485660553, 3.14053320885, -0.0238841612192]
+  - [-3.10801386833, 4.88111925125, -1.52614450226]
+  - [4.30852985382, 3.19435501099, 2.20723667763]
+  num_waypoints: 5 # computed by the benchmark's script as length(waypoints)
+  starting_pose:
+    [0.0, 0.0, 0.0]
+  penalty_time: # not used in the benchmark, needed by the refbox
+    120.0
+  timeout_time: # not used in the benchmark, needed by the refbox
+    120.0
+
+
+\subsubsubsection{Transform data format}
+
+To run FBM2H, it is needed to provide a transform by specifying the argument team_name when launching the benchmark (see following paragraphs).
+
+The transform is acquired as described in 6.2.6. Markerset-robot transform acquisition TODO: link
+
+The transform is saved in a yaml file with the following structure:
+transform-<team_name>.yaml
+
+robot_info: <team_name> # the team's name or any other identifier
+transform_timestamp: <%Y-%m-%d_%H:%M:%S> # the acquisition timestamp
+marker_to_robot_transform:
+- [<x>, <y>, <z>] # the translation from markerset to robot
+- [<qx>, <qy>, <qz>, <qw>] # the orientation of the robot wrt to the markerset
+robot_to_marker_transform:
+- [<x>, <y>, <z>] # the translation from robot to markerset
+- [<qx>, <qy>, <qz>, <qw>] # the orientation of the markerset wrt to the robot
+
+The identity transform, that can be used during testing:
+
+transform-identity.yaml
+
+robot_info: identity
+transform_timestamp: 0
+marker_to_robot_transform:
+- [0.0, 0.0, 0.0]
+- [0.0, 0.0, 0.0, 1.0]
+robot_to_marker_transform:
+- [0.0, 0.0, 0.0]
+- [0.0, 0.0, 0.0, 1.0]
+
+
+\subsubsubsection{Score data format}
+
+This is a summary of the score's format.
+The score is sent to the refbox at the end of the benchmark as a string in yaml format.
+
+position_accuracy
+orientation_accuracy
+execution_time
+hits # the number of hits, manually inserted
+timeout_segments: 0 # always 0
+details:
+  marker-robot transform # the transform used during the benchmark
+segments_details: # details for each segment
+  i: # with i from 0 to number of waypoints - 1
+    dinstance_error
+    end_segment_time
+    orientation_error
+    refbox_timeout: false # always false
+    result_payload: {} # always empty
+    robot_pose: # the robot pose acquired when it reached the waypoint
+    segment_time
+    start_segment_time
+    target_pose: # the pose of the waypoint
+    timeout: false # always false
+
+%---------------------------------------------------------------
+
+\subsubsection{Execution}
+
+Before executing the benchmark,
+· acquire the robot's transforms (although it is possible to use the identity transform during testing);
+· configure the rigid body in the mocap software, especially the rigidbody's id in Motive have to match the value in rockin_mocap/config/all_home_mocap.yaml (in MotiveTracker: rigid body properties/advanced/user data);
+· check the benchmark's configuration.
+
+\subsubsubsection{Executing with the refbox}
+
+To run the benchmark, execute the command
+$ roslaunch rockin_scoring fbm2h.launch team_name:=<team_name> # <team_name> must be the same as in transform-<team_name>.yaml
+
+A terminal opens, where the fbm2h script's output is displayed.
+The benchmark is completely autonomous and doesn't require any user input during the exeution.
+Only at the end of the benchmark it is prompted the number of hits (as referred by the referee).
+
+
+\subsubsubsection{Testing with mocap system}
+
+To test the benchmark execute this command:
+$ roslaunch rockin_scoring fbm2h_test.launch team_name:=identity
+
+Three terminals open for fbm2h_refbox_test, fbm2h_client_test and fbm2h.
+The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox by publishing the FSM' state.
+
+In the Client terminal you have to confirm when to send the result (corresponding to the robot reaching the next waypoint).
+
+
+\subsubsubsection{Testing without mocap system}
+
+This test consists in running the normal test without launching the mocap_optitrack, rosbag record, map_server and tf publisher but rather playing a bag that provides the topics of these nodes.
+The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox like in 6.2.5.2. Testing with mocap system TODO: link
+
+To test the benchmark execute these commands, in this order and each in a different terminal:
+$ roscore
+$ rosparam set use_sim_time true
+$ rockin_mocap/test_logs$ rosbag play --clock log_fbm2h_mocap_2015-10-23-16-15-40_0.bag
+$ roslaunch rockin_scoring fbm2h_test_optitrackless.launch team_name:=identity # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
+
+A recorded bag is available (rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0.bag) and in the file rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0_reached_waypoint_timing.yaml there are the reached_waypoint "timestamps" of the recorded robot.
+You have to send them manually through the fmb2h_client_test terminal.
+
+$ TODO format without crazy colours
+
+
+
+\subsubsection{Markerset-robot transform acquisition}
+
+With this package it's possible to acquire the tf transform from the markerset to the robot through the mocap system.
+
+To acquire a transform, position the robot in (x=0, y=0, theta=0) and launch rockin_acquire_markerset_transform by executing the command
+$ roslaunch rockin_acquire_markerset_transform acquire.launch
+It is then prompted the team_name.
+
+The transform is saved in ~/logs/transform-<team_name>.yaml.
+
+In rockin_acquire_markerset_transform/config/mocap.yaml there is the mocap cofiguration. It is not needed to configure this normally.
+
+
+$ TODO format without crazy colours
 
 \clearpage
 

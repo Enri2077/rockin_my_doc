@@ -3,6 +3,10 @@
 6.2.1. (from d2.1.3: 5.2.1 Functionality Description)
 This functionality benchmark aims at assessing the capabilities of a robot to correctly and autonomously navigate in a typical apartment, containing furniture and objects spread through the apartment’s rooms. The benchmark will use the RoCKIn@Home testbed. From a predefined starting position, the robot will receive a list of waypoints that it must visit to reach a goal position.
 
+The motion capture system is used to acquire the actual pose of the robot and evaluate the position and orientation accuracy.
+
+For this purpose, a markerset is fixed on the robot.
+
 6.2.4. ROS nodes
 When the benchmark is launched, these nodes are run: bmbox (fbm2h), world_map, map_server, mocap, record.
 
