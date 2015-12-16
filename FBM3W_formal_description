@@ -34,6 +34,6 @@ Where,
  Solution:
  Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot_path sampled positions that are at least d_min distant.
  More precisely the samples' minimum distance d_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d_min.
- 
-Managing possible missing segments of robot_path (because of the ground truth system's ocasional tracking loose):
- TODO
+
+A further problem is the occasional track losing of the mocap system. If the mocap system is well calibrated and the markerset is always visible, the problem can be ignored since a short missing segment in robot path would be considered a straight segment.
+

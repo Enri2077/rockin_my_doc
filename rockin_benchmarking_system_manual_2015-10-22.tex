@@ -1112,50 +1112,48 @@ For this purpose a markerset is fixed on the robot.
 
 \subsubsection{ROS nodes}
 
-When the benchmark is launched, these nodes are run: bmbox (fbm2h), world_map, map_server, mocap, record.
-
-\includegraphics[width=\textwidth]{figures/fbm2h_graph.png TODO}
+When the benchmark is launched, these nodes are run: bmbox (fbm2h), world\_map, map\_server, mocap, record.
 
 Of special interest are the following:
 
-
 \subsubsubsection{fbm2h benchmark node}
-\label{sec:fbm2h benchmark node}
+\label{sec:fbm2h_benchmark_node}
 
 This is the ROS node in charge of running the benchmark.
-The source is stored in rockin_scoring/scripts/fbm2h.
+The source is stored in rockin\_scoring/scripts/fbm2h.
 
 The i-th segment is defined as: the robot's path from waypoint i-1 to waypoint i; segment 0: robot's path from starting pose to waypoint 0.
 
 The script works as follows:
 
-· Start up phase:
-In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING_CLIENT.
+\begin{itemize}
+  \item Start up phase:
+In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING\_CLIENT.
 
 When the benchmark is launched, the robot is in the starting position.
-The transform from markerset to robot odometric center is loaded as parameter, for the appropriate team (specifyed as argument, see \ref{sec:FBM2H Execution}).
+The transform from markerset to robot odometric center is loaded as parameter, for the appropriate team (specifyed as argument, see \ref{sec:fbm2h_execution}).
 This is used to evaluate the robot pose when it reaches a waypoint.
-The benchmark's parameters are loaded as well (see \ref{sec:Goal data format}).
+The benchmark's parameters are loaded as well (see \ref{sec:fbm2h_goal_data_format}).
 
-· Execution on each segment:
-On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT.
+  \item Execution on each segment:
+On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING\_GOAL, BmBoxState.EXECUTING\_GOAL, BmBoxState.WAITING\_RESULT.
 
-On the first segment (from starting pose to waypoint 0) BmBoxState.TRANSMITTING_GOAL's payload is the goal data, on every other segment (segment i: from waypoint i-1 to waypoint i) the payload is empty.
+On the first segment (from starting pose to waypoint 0) BmBoxState.TRANSMITTING\_GOAL's payload is the goal data, on every other segment (segment i: from waypoint i-1 to waypoint i) the payload is empty.
 
-When the client (that is actually the refbox) receives the goal, the FSM transitions to ClientState.EXECUTING_GOAL and then to ClientState.WAITING_RESULT.
-Once the robot reaches the waypoint, the refbox performs the transition from ClientState.WAITING_RESULT to ClientState.READY (the payload of ClientState.WAITING_RESULT is empty).
+When the client (that is actually the refbox) receives the goal, the FSM transitions to ClientState.EXECUTING\_GOAL and then to ClientState.WAITING\_RESULT.
+Once the robot reaches the waypoint, the refbox performs the transition from ClientState.WAITING\_RESULT to ClientState.READY (the payload of ClientState.WAITING\_RESULT is empty).
 
 The markerset pose is acquired from the mocap system and the robot pose computed from the markerset to robot transform.
 The accuracy of the robot pose wrt the waypoint pose is computed (see d2.1.3: 5.2.7).
 The segment time is evaluated.
 
-· End of benchmark:
-In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING_SCORE, BmBoxState.END.
-The BmBoxState.TRANSMITTING_SCORE's payload contains the score. (see \ref{sec:Score data format})
-
+  \item End of benchmark:
+In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING\_SCORE, BmBoxState.END.
+The BmBoxState.TRANSMITTING\_SCORE's payload contains the score. (see \ref{sec:fbm2h_score_data_format})
+\end{itemize}
 
 \subsubsubsection{fbm2h record node}
-\label{sec:fbm2h record node}
+\label{sec:fbm2h_record_node}
 
 When the benchmark is launched the record node will log the following topics:
 
@@ -1180,14 +1178,14 @@ Resulting logs are stored in ~/logs/.
 \subsubsection{Configuration and data formats}
 
 The benchmark's parameters consist in the goal that is sent to the RefBox and the markerset-robot transforms.
-The first is found in rockin_scoring/config/fbm2h.yaml and rockin_scoring/config/fbm2h_test.yaml, the transforms are in the directory rocking_scoring/transforms/.
+The first is found in rockin\_scoring/config/fbm2h.yaml and rockin\_scoring/config/fbm2h\_test.yaml, the transforms are in the directory rocking\_scoring/transforms/.
 
 
 \subsubsubsection{Goal data format}
-\label{sec:Goal data format}
+\label{sec:fbm2h_goal_data_format}
 
 This is a summary of the goal's format. The goal is sent to the refbox as a string in yaml format.
-The goal corresponds to the FBM2H's configuration, found in rockin_scoring/config/fbm2h.yaml, although num_waypoints is added before it is sent.
+The goal corresponds to the FBM2H's configuration, found in rockin\_scoring/config/fbm2h.yaml, although num\_waypoints is added before it is sent.
 
 \begin{verbatim}
 goal:
@@ -1208,11 +1206,11 @@ goal:
 
 
 \subsubsubsection{Transform data format}
-\label{sec:Transform data format}
+\label{sec:fbm2h_transform_data_format}
 
-To run FBM2H, it is needed to provide a transform by specifying the argument team_name when launching the benchmark (see following paragraphs).
+To run FBM2H, it is needed to provide a transform by specifying the argument team\_name when launching the benchmark (see following paragraphs).
 
-The transform is acquired as described in \ref{sec:Markerset-robot transform acquisition}.
+The transform is acquired as described in \ref{sec:fbm2h_transform_acquisition}.
 
 The transform is saved in a yaml file with the following structure:
 
@@ -1253,7 +1251,7 @@ robot_to_marker_transform:
 
 
 \subsubsubsection{Score data format}
-\label{sec:Score data format}
+\label{sec:fbm2h_score_data_format}
 
 This is a summary of the score's format.
 The score is sent to the refbox at the end of the benchmark as a string in yaml format.
@@ -1283,12 +1281,14 @@ segments_details: # details for each segment
 %---------------------------------------------------------------
 
 \subsubsection{Execution}
-\label{sec:FBM2H Execution}
+\label{sec:fbm2h_execution}
 
 Before executing the benchmark,
-· acquire the robot's transforms (although it is possible to use the identity transform during testing);
-· configure the rigid body in the mocap software, especially the rigidbody's id in Motive have to match the value in rockin_mocap/config/all_home_mocap.yaml (in MotiveTracker: rigid body properties/advanced/user data);
-· check the benchmark's configuration.
+\begin{itemize}
+  \item acquire the robot's transforms (although it is possible to use the identity transform during testing);
+  \item configure the rigid body in the mocap software, especially the rigidbody's id in Motive have to match the value in rockin\_mocap/config/all\_home\_mocap.yaml (in MotiveTracker: rigid body properties/advanced/user data);
+  \item check the benchmark's configuration.
+\end{itemize}
 
 \subsubsubsection{Executing with the refbox}
 
@@ -1309,16 +1309,16 @@ To test the benchmark execute this command:
 $ roslaunch rockin_scoring fbm2h_test.launch team_name:=identity
 \end{verbatim} 
 
-Three terminals open for fbm2h_refbox_test, fbm2h_client_test and fbm2h.
-The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox by publishing the FSM' state.
+Three terminals open for fbm2h\_refbox\_test, fbm2h\_client\_test and fbm2h.
+The scripts rockin\_scoring/scripts/fbm2h\_client\_test and rockin\_scoring/scripts/fbm2h\_refbox\_test simulate the refbox by publishing the FSM' state.
 
 In the Client terminal you have to confirm when to send the result (corresponding to the robot reaching the next waypoint).
 
 
 \subsubsubsection{Testing without mocap system}
 
-This test consists in running the normal test without launching the mocap_optitrack, rosbag record, map_server and tf publisher but rather playing a bag that provides the topics of these nodes.
-The scripts rockin_scoring/scripts/fbm2h_client_test and rockin_scoring/scripts/fbm2h_refbox_test simulate the refbox like in Testing with mocap system}
+This test consists in running the normal test without launching the mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
+The scripts rockin\_scoring/scripts/fbm2h\_client\_test and rockin\_scoring/scripts/fbm2h\_refbox\_test simulate the refbox like in Testing with mocap system}
 
 To test the benchmark execute these commands, in this order and each in a different terminal:
 \begin{verbatim}
@@ -1328,31 +1328,282 @@ $ rockin_mocap/test_logs$ rosbag play --clock log_fbm2h_mocap_2015-10-23-16-15-4
 $ roslaunch rockin_scoring fbm2h_test_optitrackless.launch team_name:=identity # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
 \end{verbatim} 
 
-A recorded bag is available (rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0.bag) and in the file rockin_mocap/test_logs/log_fbm2h_mocap_2015-10-23-16-15-40_0_reached_waypoint_timing.yaml there are the reached_waypoint "timestamps" of the recorded robot.
-You have to send them manually through the fmb2h_client_test terminal.
+A recorded bag is available (rockin\_mocap/test\_logs/log\_fbm2h\_mocap\_2015-10-23-16-15-40\_0.bag) and in the file rockin\_mocap/test\_logs/log\_fbm2h\_mocap\_2015-10-23-16-15-40\_0\_reached\_waypoint\_timing.yaml there are the reached\_waypoint "timestamps" of the recorded robot.
+You have to send them manually through the fmb2h\_client\_test terminal.
 
 
 \subsubsection{Markerset-robot transform acquisition}
-\label{sec:Markerset-robot transform acquisition}
+\label{sec:fbm2h_transform_acquisition}
 
 With this package it's possible to acquire the tf transform from the markerset to the robot through the mocap system.
 
-To acquire a transform, position the robot in (x=0, y=0, theta=0) and launch rockin_acquire_markerset_transform by executing the command
+To acquire a transform, position the robot in (x=0, y=0, theta=0) and launch rockin\_acquire\_markerset\_transform by executing the command
 \begin{verbatim}
 $ roslaunch rockin_acquire_markerset_transform acquire.launch
 \end{verbatim} 
-It is then prompted the team_name.
+It is then prompted the team\_name.
 
-The transform is saved in ~/logs/transform-<team_name>.yaml.
+The transform is saved in ~/logs/transform-<team\_name>.yaml.
 
-In rockin_acquire_markerset_transform/config/mocap.yaml there is the mocap cofiguration. It is not needed to configure this normally.
+In rockin\_acquire\_markerset\_transform/config/mocap.yaml there is the mocap cofiguration. It is not needed to configure this normally.
 
 
 \clearpage
 
 %===============================================================
+
+
 \subsection{Functional Benchmark 3 for \ro@Work: trajectory following}
 \label{sec:fbm3w}
+
+This functionality benchmark assesses the robots capability in controlling the manipulator (and the mobile platform) motion in a continuous path control manner. A path is given to the robot. The robot has to follow this path with an end-effector on its manipulator. The path and the reference frame are also printed on a sheet of paper positioned on the table.
+
+The ground truth system measures the deviation between the given path (target_path) and the path followed by the robot (robot_path) using the markerset at the end-effector.
+Only the position of the end-effector is considered, the orientation is not.
+
+The benchmark is composed by 5 runs. For each run a different path is selected as target path.
+The target paths are previously defined.
+The overall score is the accuracy of the best run.
+
+
+\subsubsection{Accuracy evaluation}
+Given robot_path and target_path, l a parameter in [0, 1],
+let r(l) = ( x_r(l), y_r(l) ) the parametric representation of the robot path, and
+let t(l) = ( x_t(l), y_t(l) ) the parametric representation of the target path.
+Note: r(0) = t(0) = starting_position; r(1) is the end point of the robot's path; t(1) is the end point of the target path.
+
+The accuracy is computed as 1/N sum{ d(r(l), t(l)) }, l in Ls.
+Where,
+ Ls is a subset of Lgt (s: sampling)
+ Lgt are the values of l to which corresponds a measure of the robot's path from the ground truth system;
+ N = |Ls|;
+ d is the Euclidean distance.
+
+
+\subsubsection{Robot path reconstruction from the ground truth system}
+Because of the great amount of positions provided by the ground truth system, a subset of these is enough to precisely approximate the robot's path.
+
+Since the ground truth system introduces a measurement error on every position that it provides, if the path is simply composed by all the measured positions (or even a subset of positions sampled at a certain frequency), the measured path results in the real path plus a random distribution.
+
+This means that the measured path would consist in a tangle when the robot stays still and in a sort of "telephone cord" when the robot is moving.
+This effect tends to be the less rilevant the faster the robot is moving but it also depends by the sampling frequency (a higher fs cause a tangler measured path).
+
+Assuming the distribution is constant in time and has a mean error of epsilon,
+then even when the robot stays still, the path grows by epsilon for each sample.
+This means that the path's length suffers a constant growth summed to the real one.
+
+Furthermore, if the mean error varies in time, the length error do too.
+This constitutes a problem since the path is "indexed" by its (normalised) length.
+In fact, lengthwise, the weight of any small segment on the path would depend by the measurement error distribution on that segment.
+ 
+Solution:
+Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot_path sampled positions that are at least d_min distant.
+More precisely the samples' minimum distance d_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d_min.
+
+A further problem is the occasional track losing of the mocap system. If the mocap system is well calibrated and the markerset is always visible, the problem can be ignored since a short missing segment in robot path would be considered a straight segment. In this case some short missing segments would make little difference on the accuracy evaluation.
+
+
+\subsubsection{ROS nodes}
+
+When the benchmark is launched, these nodes are run: bmbox (fbm3w), world\_map, map\_server, mocap, record.
+
+Of special interest are the following:
+
+\subsubsubsection{fbm3w benchmark node}
+\label{sec:fbm3w_benchmark_node}
+
+This is the ROS node in charge of running the benchmark.
+The source is stored in rockin\_scoring/scripts/fbm3w.
+
+The script works as follows:
+
+\begin{itemize}
+  \item Start up phase:
+In the start up phase the BmBox goes through the states: BmBoxState.START, BmBoxState.WAITING\_CLIENT, BmBoxState.READY.
+
+When the benchmark is launched, the robot is positioned in front of the table.
+The configuration is loaded from rockin\_scoring/config/fbm3w.yaml.
+
+  \item Execution for each run:
+On each segment, the BmBox goes through the states: BmBoxState.READY, BmBoxState.WAITING\_MANUAL\_OPERATION, BmBoxState.COMPLETED\_MANUAL\_OPERATION, BmBoxState.TRANSMITTING\_GOAL, BmBoxState.EXECUTING\_GOAL, BmBoxState.WAITING\_RESULT.
+
+The specification for the current run is read from the configuration (see \ref{sec:fbm3w_parameters_format}).
+This only consist of a string indicating whether the target path is a line or a spline.
+
+The script requests a manual operation transitioning to BmBoxState.WAITING\_MANUAL\_OPERATION.
+The robot is told by the refbox to position the end-effector in reference position.
+Once the robot has finished positioning (and the printed path is manually positioned), the manual operetion terminates and the FSM transitions to BmBoxState.COMPLETED\_MANUAL\_OPERATION.
+
+The robot's reference position is acquired.
+
+The script sends a goal request to the refbox transitioning to BmBoxState.TRANSMITTING\_GOAL.
+The robot is told by the refbox to position the end-effector in starting position and to start following the target path.
+Once the robot has finished positioning (and the printed path is manually positioned), goal request terminates and the FSM transitions to BmBoxState.EXECUTING\_GOAL.
+
+The acquisition of the robot path is started (with a callback function collecting the poses as they arrive from the mocap system).
+The robot's starting position will be evaluated as the first pose in robot path.
+
+The script calls WaitResult and transitions to BmBoxState.WAITING\_RESULT.
+Once the robot has finished following the path, WaitResult returns and the FSM transitions to BmBoxState.READY or - if this is the last run - to BmBoxState.TRANSMITTING\_SCORE.
+The acquisition of the robot path is ended.
+The robot's frame is computed from the reference and starting position.
+The accuracy is evaluated between target path and robot path.
+
+  \item End of benchmark:
+In this phase the BmBox goes through the states: BmBoxState.READY, BmBoxState.TRANSMITTING\_SCORE, BmBoxState.END.
+The BmBoxState.TRANSMITTING\_SCORE's payload contains the score.\footnote{Note: the CFH throws away the payloads and the score is saved manually or written by hand. It is useful nontheless to include the score in the payload so that it get logged} (see \ref{sec:fbm3w_score_data_format})
+\end{itemize}
+
+\subsubsubsection{fbm3w record node}
+\label{sec:fbm3w_record_node}
+
+When the benchmark is launched the record node will log the following topics:
+
+\begin{verbatim}
+/fbm3w/bmbox_state
+/fbm3w/client_state
+/fbm3w/refbox_state
+/fbm3w/map
+/fbm3w/map_metadata
+/fbm3w/robot_at_work/pose
+/fbm3w/robot_at_work/pose2d
+/fbm3w/robot_path_in_frame
+/fbm3w/target_path_in_frame
+/fbm3w/info
+/tf
+/rosout
+\end{verbatim} 
+
+Resulting logs are stored in ~/logs/.
+
+\clearpage
+
+%---------------------------------------------------------------
+\subsubsection{Configuration and data formats}
+
+The only configuration for this banchmark consists in the list of target paths that the robot must follow in in each run.
+
+\subsubsubsection{Parameters format}
+\label{sec:fbm3w_parameters_format}
+
+The benchmark's only parameter is a list of path specifications for each run.
+The path's specification only consists of a string indicating which path is selected.
+The number of elements of the list should be equal to the script's variable BENCHMARK_RUNS.
+
+The configuration is located in rockin_scoring/config/fbm3w.yaml.
+
+\begin{figure}[h!]
+	\noindent
+	\begin{minipage}[t!]{\linewidth}
+		\begin{lstlisting}[caption=fbm3w.yaml]
+runs_specifications:
+  - 'line'
+  - 'spline'
+  - 'line'
+  - 'spline'
+  - 'line'
+    \end{lstlisting}
+	\end{minipage}
+\end{figure}
+
+\subsubsubsection{Goal data format}
+\label{sec:fbm3w_goal_data_format}
+
+The goal consists in the parametric description of the target path.
+Many different paths are hardcoded as functions in the script and, for each run, one is selected as target_path.
+
+The goal is not sent to the refbox since the paths are predefined.
+
+For instance, here are defined two paths, "line\_path" and "spline\_path":
+\begin{verbatim}
+def line_path(l):
+	l = float(l)
+	return Pose2D(0.15*l, 0.045*l, 0) # line from (0, 0) to (30, 10) [cm]
+
+def semi_ellipse(l):
+	l = float(l)
+	return Pose2D(0.11 - 0.11*cos(pi*l), 0.11*sin(pi*l), 0) # semi ellipse (0,0),(5, 4.8), (10, 0) [cm]
+
+def sine(l):
+	l = float(l)
+	return Pose2D(0.15*l, 0.075*sin(12.5*pi*0.15*l), 0) # semi ellipse (0,0),(5, 4.8), (10, 0) [cm]
+
+spline_path = sine
+\end{verbatim} 
+
+\subsubsubsection{Score data format}
+\label{sec:fbm3w_score_data_format}
+
+This is a summary of the score's format.
+The score is a string in yaml format.
+
+\begin{verbatim}
+best_distance_error
+best_run
+execution_time
+runs_details:
+  i: # with i from 0 to number of runs - 1
+    spec # what path was selected as target_path for this run
+    distance_error # the distance error for this run
+    execution_time # the execution time for this run
+\end{verbatim} 
+
+%---------------------------------------------------------------
+
+\subsubsection{Execution}
+\label{sec:fbm3w_execution}
+TODO
+Before executing the benchmark,
+\begin{itemize}
+  \item acquire the robot's transforms (although it is possible to use the identity transform during testing);
+  \item configure the rigid body in the mocap software, especially the rigidbody's id in Motive have to match the value in rockin\_mocap/config/all\_home\_mocap.yaml (in MotiveTracker: rigid body properties/advanced/user data);
+  \item check the benchmark's configuration.
+\end{itemize}
+
+\subsubsubsection{Executing with the refbox}
+
+TODO
+To run the benchmark, execute the command
+\begin{verbatim}
+TODO
+\end{verbatim} 
+
+A terminal opens, where the fbm3w script's output is displayed.
+The benchmark is completely autonomous and doesn't require any user input during the exeution.
+
+
+\subsubsubsection{Testing with mocap system}
+\label{sec:fbm3w_testing_with_mocap_system}
+
+To test the benchmark execute this command:
+\begin{verbatim}
+$ roslaunch rockin_scoring fbm3w_test.launch
+\end{verbatim} 
+
+Three terminals open for fbm3w\_refbox\_test, fbm3w\_client\_test and fbm3w.
+The scripts rockin\_scoring/scripts/fbm3w\_client\_test and rockin\_scoring/scripts/fbm3w\_refbox\_test simulate the refbox by publishing the FSM' state.
+
+In the Client terminal you have to confirm when to send the result TODO.
+
+
+\subsubsubsection{Testing without mocap system}
+
 TODO
 
+This test consists in running the normal test without launching the mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
+The scripts rockin\_scoring/scripts/fbm3w\_client\_test and rockin\_scoring/scripts/fbm3w\_refbox\_test simulate the refbox like in \ref{sec:fbm3w_testing_with_mocap_system}
+
+To test the benchmark execute these commands, in this order and each in a different terminal:
+\begin{verbatim}
+TODO
+\end{verbatim} 
+
+TODO
+
+\subsubsection{Noise analysis}
+\label{sec:fbm3w_noise_analysis}
+
+TODO
+
+\clearpage
 \end{document}
