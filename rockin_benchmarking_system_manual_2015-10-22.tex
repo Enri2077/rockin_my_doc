@@ -1298,11 +1298,12 @@ $ roslaunch rockin_scoring fbm2h.launch team_name:=<team_name> # <team_name> mus
 \end{verbatim} 
 
 A terminal opens, where the fbm2h script's output is displayed.
-The benchmark is completely autonomous and doesn't require any user input during the exeution.
+The benchmark is completely autonomous and doesn't require any user input during the execution.
 Only at the end of the benchmark it is prompted the number of hits (as referred by the referee).
 
 
 \subsubsubsection{Testing with mocap system}
+\label{sec:fbm2h_testing_with_mocap_system}
 
 To test the benchmark execute this command:
 \begin{verbatim}
@@ -1317,8 +1318,8 @@ In the Client terminal you have to confirm when to send the result (correspondin
 
 \subsubsubsection{Testing without mocap system}
 
-This test consists in running the normal test without launching the mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
-The scripts rockin\_scoring/scripts/fbm2h\_client\_test and rockin\_scoring/scripts/fbm2h\_refbox\_test simulate the refbox like in Testing with mocap system}
+This test consists in running the normal test without launching mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
+The scripts rockin\_scoring/scripts/fbm2h\_client\_test and rockin\_scoring/scripts/fbm2h\_refbox\_test simulate the refbox like in \ref{sec:fbm2h_testing_with_mocap_system}.
 
 To test the benchmark execute these commands, in this order and each in a different terminal:
 \begin{verbatim}
@@ -1358,7 +1359,7 @@ In rockin\_acquire\_markerset\_transform/config/mocap.yaml there is the mocap co
 
 This functionality benchmark assesses the robots capability in controlling the manipulator (and the mobile platform) motion in a continuous path control manner. A path is given to the robot. The robot has to follow this path with an end-effector on its manipulator. The path and the reference frame are also printed on a sheet of paper positioned on the table.
 
-The ground truth system measures the deviation between the given path (target_path) and the path followed by the robot (robot_path) using the markerset at the end-effector.
+The ground truth system measures the deviation between the given path (target\_path) and the path followed by the robot (robot\_path) using the markerset at the end-effector.
 Only the position of the end-effector is considered, the orientation is not.
 
 The benchmark is composed by 5 runs. For each run a different path is selected as target path.
@@ -1367,10 +1368,10 @@ The overall score is the accuracy of the best run.
 
 
 \subsubsection{Accuracy evaluation}
-Given robot_path and target_path, l a parameter in [0, 1],
-let r(l) = ( x_r(l), y_r(l) ) the parametric representation of the robot path, and
-let t(l) = ( x_t(l), y_t(l) ) the parametric representation of the target path.
-Note: r(0) = t(0) = starting_position; r(1) is the end point of the robot's path; t(1) is the end point of the target path.
+Given robot\_path and target\_path, l a parameter in [0, 1],
+let r(l) = ( x\_r(l), y\_r(l) ) the parametric representation of the robot path, and
+let t(l) = ( x\_t(l), y\_t(l) ) the parametric representation of the target path.
+Note: r(0) = t(0) = starting\_position; r(1) is the end point of the robot's path; t(1) is the end point of the target path.
 
 The accuracy is computed as 1/N sum{ d(r(l), t(l)) }, l in Ls.
 Where,
@@ -1397,8 +1398,8 @@ This constitutes a problem since the path is "indexed" by its (normalised) lengt
 In fact, lengthwise, the weight of any small segment on the path would depend by the measurement error distribution on that segment.
  
 Solution:
-Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot_path sampled positions that are at least d_min distant.
-More precisely the samples' minimum distance d_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d_min.
+Since the benchmark focuses on the path (sequence of positions) rather than the trajectory (position, speed, acceleration), it suffices to only include in robot\_path sampled positions that are at least d\_min distant.
+More precisely the samples' minimum distance d\_min, have to be greater than c·epsilon, with c > 1 and big enough to make sure that the measurement error never exceeds d\_min.
 
 A further problem is the occasional track losing of the mocap system. If the mocap system is well calibrated and the markerset is always visible, the problem can be ignored since a short missing segment in robot path would be considered a straight segment. In this case some short missing segments would make little difference on the accuracy evaluation.
 
@@ -1481,16 +1482,16 @@ Resulting logs are stored in ~/logs/.
 %---------------------------------------------------------------
 \subsubsection{Configuration and data formats}
 
-The only configuration for this banchmark consists in the list of target paths that the robot must follow in in each run.
+The configuration for this banchmark consists in the list of target paths that the robot must follow in in each run, the actual description of the paths and the parameter D\_MIN.
 
 \subsubsubsection{Parameters format}
 \label{sec:fbm3w_parameters_format}
 
-The benchmark's only parameter is a list of path specifications for each run.
+The only loaded benchmark's parameter is the list of path specifications for each run.
 The path's specification only consists of a string indicating which path is selected.
-The number of elements of the list should be equal to the script's variable BENCHMARK_RUNS.
+The number of elements of the list should be equal to the script's variable BENCHMARK\_RUNS.
 
-The configuration is located in rockin_scoring/config/fbm3w.yaml.
+This configuration is located in rockin\_scoring/config/fbm3w.yaml.
 
 \begin{figure}[h!]
 	\noindent
@@ -1506,11 +1507,21 @@ runs_specifications:
 	\end{minipage}
 \end{figure}
 
+The D\_MIN parameter is hardcoded in the script.
+D\_MIN should be set once the mocap system is calibrated so that the mean position error is always smaller.
+
+The mean position error is affected by the smoothing set in the mocap software.
+By increasing the smoothing, the measurement error decreases but also the measure becomes less reliable.
+In fact a smoothing too high would completely hide the robot's path.
+For this reason, the smoothing should be set as low as possible.
+
+The mean error can be measured using the package mocap\_noise\_statistics (see \ref{sec:fbm3w_noise_analysis}).
+
 \subsubsubsection{Goal data format}
 \label{sec:fbm3w_goal_data_format}
 
 The goal consists in the parametric description of the target path.
-Many different paths are hardcoded as functions in the script and, for each run, one is selected as target_path.
+Many different paths are hardcoded as functions in the script and, for each run, one is selected as target\_path.
 
 The goal is not sent to the refbox since the paths are predefined.
 
@@ -1552,25 +1563,31 @@ runs_details:
 
 \subsubsection{Execution}
 \label{sec:fbm3w_execution}
-TODO
+
 Before executing the benchmark,
 \begin{itemize}
-  \item acquire the robot's transforms (although it is possible to use the identity transform during testing);
   \item configure the rigid body in the mocap software, especially the rigidbody's id in Motive have to match the value in rockin\_mocap/config/all\_home\_mocap.yaml (in MotiveTracker: rigid body properties/advanced/user data);
+  \item Measure the position's noise;
   \item check the benchmark's configuration.
 \end{itemize}
 
 \subsubsubsection{Executing with the refbox}
 
-TODO
 To run the benchmark, execute the command
 \begin{verbatim}
-TODO
+$ roslaunch rockin_scoring fbm3w.launch
 \end{verbatim} 
 
 A terminal opens, where the fbm3w script's output is displayed.
-The benchmark is completely autonomous and doesn't require any user input during the exeution.
+The benchmark is completely autonomous and doesn't require any user input during the execution.
 
+It is useful to also open rviz and see the robot path and target path as they are published after the accuracy is computed.
+To do this, before launching the benchmark execute the following commands in different terminals
+\begin{verbatim}
+$ roscore
+$ rviz
+\end{verbatim}
+When the benchmark is started, it is possible to add the topics "/fbm3w/robot_path_in_frame" and "/fbm3w/target_path_in_frame" in rviz.
 
 \subsubsubsection{Testing with mocap system}
 \label{sec:fbm3w_testing_with_mocap_system}
@@ -1583,27 +1600,41 @@ $ roslaunch rockin_scoring fbm3w_test.launch
 Three terminals open for fbm3w\_refbox\_test, fbm3w\_client\_test and fbm3w.
 The scripts rockin\_scoring/scripts/fbm3w\_client\_test and rockin\_scoring/scripts/fbm3w\_refbox\_test simulate the refbox by publishing the FSM' state.
 
-In the Client terminal you have to confirm when to send the result TODO.
+In the three terminals you have to manually confirm when to proceed.
 
 
 \subsubsubsection{Testing without mocap system}
 
-TODO
-
-This test consists in running the normal test without launching the mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
+This test consists in running the normal test without launching mocap\_optitrack, rosbag record, map\_server and tf publisher but rather playing a bag that provides the topics of these nodes.
 The scripts rockin\_scoring/scripts/fbm3w\_client\_test and rockin\_scoring/scripts/fbm3w\_refbox\_test simulate the refbox like in \ref{sec:fbm3w_testing_with_mocap_system}
 
 To test the benchmark execute these commands, in this order and each in a different terminal:
 \begin{verbatim}
-TODO
+$ roscore
+$ rosparam set use_sim_time true
+$ rockin_mocap/test_logs$ rosbag play --clock log_fbm3w_mocap_2015-11-03-17-39-42_0.bag
+$ roslaunch rockin_scoring fbm3w_test_optitrackless.launch # it's better to wait a second before running this command to leave time to rosbag and tf to emit some transforms.
 \end{verbatim} 
 
-TODO
+A recorded bag is available (rockin\_mocap/test\_logs/log_fbm3w_mocap_2015-11-03-17-39-42_0.bag).
+
 
 \subsubsection{Noise analysis}
 \label{sec:fbm3w_noise_analysis}
 
-TODO
+To check the measurement error of the mocap system, set the smoothing to a reasonable value and leave the FBM3W's markerset in a stable position (as still as possible).
+Then launch mocap\_noise\_statistics with the command
+
+\begin{verbatim}
+$ roslaunch mocap_noise_statistics mocap_noise_statistics.launch
+\end{verbatim}
+
+In the terminal will be shown a graph with the distribution of the difference between two measures of the position of the markerset.
+
+On the vertical axis is shown the distance in metres, grouped in quanta.
+On the horizontal axis is shown the normalised amount of samples that felt in that quantum.
+
+When setting D_MIN, it is advisable to choose a value that stays far from the heap visible in the distribution.
 
 \clearpage
 \end{document}
